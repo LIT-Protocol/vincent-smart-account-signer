@@ -1,0 +1,17 @@
+{
+  "allowJs": true,
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "declaration": true,
+    "outDir": "./out",
+    "strict": true,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "inlineSources": true
+  },
+  "include": [
+    "./**/*.ts"
+  ]
+}

@@ -1,0 +1,69 @@
+# An .aiignore file follows the same syntax as a .gitignore file.
+# .gitignore documentation: https://git-scm.com/docs/gitignore
+# Junie will ask for explicit approval before view or edit the file or file within a directory listed in .aiignore.
+# Only files contents is protected, Junie is still allowed to view file names even if they are listed in .aiignore.
+# Be aware that the files you included in .aiignore can still be accessed by Junie in two cases:
+# - If Brave Mode is turned on.
+# - If a command has been added to the Allowlist — Junie will not ask for confirmation, even if it accesses - files and folders listed in .aiignore.
+
+# compiled output
+dist
+tmp
+out-tsc
+
+# dependencies
+node_modules
+
+# IDEs and editors
+.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
+
+.nx/cache
+.nx/workspace-data
+
+packages/examples
+screenshots
+.env
+**/.next
+**/next-env.d.ts
+
+packages/examples
+
+**/vincent-contract-caller-config.json
+
+# Environment variables
+**/.env
+**/.env.*
+!**/.env.test.example
+!.env.example
+screenshots
+.env
+/packages/sdk/sdk-docs/**/*
+
+test-output
