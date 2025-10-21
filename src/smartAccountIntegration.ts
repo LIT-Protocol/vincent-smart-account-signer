@@ -1,5 +1,5 @@
-import { disconnectVincentAbilityClients } from "@lit-protocol/vincent-app-sdk/abilityClient";
-import { Hex } from "viem";
+import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
+import { Hex } from 'viem';
 
 import {
   abilityClient,
@@ -7,12 +7,12 @@ import {
   entryPoint,
   ownerAccount,
   vincentAppId,
-} from "./environment";
-import { generateUserOperation } from "./generateUserOperation";
-import { generateZeroDevPermissionAccount } from "./generateZeroDevPermissionAccount";
-import { setupVincentDelegation } from "./setupVincentDelegation";
-import { setupZeroDevAccount } from "./setupZeroDevAccount";
-import { sendPermittedUserOperation } from "./sendPermittedUserOperation";
+} from './environment';
+import { generateUserOperation } from './generateUserOperation';
+import { generateZeroDevPermissionAccount } from './generateZeroDevPermissionAccount';
+import { setupVincentDelegation } from './setupVincentDelegation';
+import { setupZeroDevAccount } from './setupZeroDevAccount';
+import { sendPermittedUserOperation } from './sendPermittedUserOperation';
 
 async function main() {
   // USER
@@ -47,16 +47,16 @@ async function main() {
 
   const vincentUserOp = {
     ...aaveUserOp,
-    maxFeePerGas: "0x" + aaveUserOp.maxFeePerGas?.toString(16),
-    maxPriorityFeePerGas: "0x" + aaveUserOp.maxPriorityFeePerGas?.toString(16),
-    nonce: "0x" + aaveUserOp.nonce?.toString(16),
-    callGasLimit: "0x" + aaveUserOp.callGasLimit?.toString(16),
-    verificationGasLimit: "0x" + aaveUserOp.verificationGasLimit?.toString(16),
-    preVerificationGas: "0x" + aaveUserOp.preVerificationGas?.toString(16),
+    maxFeePerGas: '0x' + aaveUserOp.maxFeePerGas?.toString(16),
+    maxPriorityFeePerGas: '0x' + aaveUserOp.maxPriorityFeePerGas?.toString(16),
+    nonce: '0x' + aaveUserOp.nonce?.toString(16),
+    callGasLimit: '0x' + aaveUserOp.callGasLimit?.toString(16),
+    verificationGasLimit: '0x' + aaveUserOp.verificationGasLimit?.toString(16),
+    preVerificationGas: '0x' + aaveUserOp.preVerificationGas?.toString(16),
     paymasterVerificationGasLimit:
-      "0x" + aaveUserOp.paymasterVerificationGasLimit?.toString(16),
+      '0x' + aaveUserOp.paymasterVerificationGasLimit?.toString(16),
     paymasterPostOpGasLimit:
-      "0x" + aaveUserOp.paymasterPostOpGasLimit?.toString(16),
+      '0x' + aaveUserOp.paymasterPostOpGasLimit?.toString(16),
   };
   const vincentAbilityParams = {
     entryPointAddress: entryPoint.address,
@@ -100,7 +100,7 @@ async function main() {
 
   await disconnectVincentAbilityClients();
 
-  console.log("Success! User operation sent and executed successfully.");
+  console.log('Success! User operation sent and executed successfully.');
   process.exit(0);
 }
 

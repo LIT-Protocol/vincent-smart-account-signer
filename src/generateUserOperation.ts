@@ -1,15 +1,17 @@
-import {
-  deserializePermissionAccount,
-} from '@zerodev/permissions';
+import { deserializePermissionAccount } from '@zerodev/permissions';
 import { toECDSASigner } from '@zerodev/permissions/signers';
-import {
-  createKernelAccountClient,
-  addressToEmptyAccount,
-} from '@zerodev/sdk';
+import { createKernelAccountClient, addressToEmptyAccount } from '@zerodev/sdk';
 import { Address } from 'viem';
 
 import { getAaveApprovalTx } from './aave';
-import { chain, kernelVersion, entryPoint, transport, publicClient, zerodevPaymaster } from './environment';
+import {
+  chain,
+  kernelVersion,
+  entryPoint,
+  transport,
+  publicClient,
+  zerodevPaymaster,
+} from './environment';
 
 export interface GenerateUserOperationParams {
   accountAddress: Address;
@@ -18,19 +20,21 @@ export interface GenerateUserOperationParams {
 }
 
 export async function generateUserOperation({
-                                              accountAddress,
-                                              permittedAddress,
-                                              serializedPermissionAccount,
-                                            }: GenerateUserOperationParams) {
+  accountAddress,
+  permittedAddress,
+  serializedPermissionAccount,
+}: GenerateUserOperationParams) {
   const vincentEmptyAccount = addressToEmptyAccount(permittedAddress);
-  const vincentAbilitySigner = await toECDSASigner({ signer: vincentEmptyAccount });
+  const vincentAbilitySigner = await toECDSASigner({
+    signer: vincentEmptyAccount,
+  });
 
   const permissionKernelAccount = await deserializePermissionAccount(
     publicClient,
     entryPoint,
     kernelVersion,
     serializedPermissionAccount,
-    vincentAbilitySigner,
+    vincentAbilitySigner
   );
   const permissionKernelClient = createKernelAccountClient({
     chain,
@@ -49,11 +53,13 @@ export async function generateUserOperation({
     accountAddress,
     chainId: chain.id,
   });
-  const callData = await permissionKernelAccount.encodeCalls([{
-    data: aaveApprovalTx.data,
-    to: aaveApprovalTx.to,
-    value: BigInt(0),
-  }]);
+  const callData = await permissionKernelAccount.encodeCalls([
+    {
+      data: aaveApprovalTx.data,
+      to: aaveApprovalTx.to,
+      value: BigInt(0),
+    },
+  ]);
   return await permissionKernelClient.prepareUserOperation({
     callData,
   });

@@ -42,5 +42,7 @@ export const ERC20_ABI: ContractInterface = [
 
 export const erc20Iface = new ethers.utils.Interface(ERC20_ABI);
 
-export const getErc20Contract = (provider: ethers.providers.JsonRpcProvider, address: string) =>
-  new ethers.Contract(address, ERC20_ABI, provider);
+export const getErc20Contract = (
+  provider: ethers.providers.JsonRpcProvider,
+  address: string
+) => new ethers.Contract(address, ERC20_ABI, provider);

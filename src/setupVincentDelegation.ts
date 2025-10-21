@@ -1,44 +1,44 @@
-import { LitActionResource, LitPKPResource } from "@lit-protocol/auth-helpers";
-import { datil } from "@lit-protocol/contracts";
-import { LitContracts } from "@lit-protocol/contracts-sdk";
+import { LitActionResource, LitPKPResource } from '@lit-protocol/auth-helpers';
+import { datil } from '@lit-protocol/contracts';
+import { LitContracts } from '@lit-protocol/contracts-sdk';
 import {
   AUTH_METHOD_SCOPE,
   LIT_ABILITY,
   LIT_NETWORK,
-} from "@lit-protocol/constants";
-import { EthWalletProvider, LitRelay } from "@lit-protocol/lit-auth-client";
-import { LitNodeClient } from "@lit-protocol/lit-node-client";
-import { PKPEthersWallet } from "@lit-protocol/pkp-ethers";
+} from '@lit-protocol/constants';
+import { EthWalletProvider, LitRelay } from '@lit-protocol/lit-auth-client';
+import { LitNodeClient } from '@lit-protocol/lit-node-client';
+import { PKPEthersWallet } from '@lit-protocol/pkp-ethers';
 import {
   AuthMethod,
   IRelayPKP,
   IRelayPollStatusResponse,
   LIT_NETWORKS_KEYS,
-} from "@lit-protocol/types";
+} from '@lit-protocol/types';
 import {
   type PermissionData,
   getClient,
-} from "@lit-protocol/vincent-contracts-sdk";
-import bs58 from "bs58";
-import { ethers } from "ethers";
-import { Hex } from "viem";
-import { PrivateKeyAccount } from "viem/accounts";
+} from '@lit-protocol/vincent-contracts-sdk';
+import bs58 from 'bs58';
+import { ethers } from 'ethers';
+import { Hex } from 'viem';
+import { PrivateKeyAccount } from 'viem/accounts';
 
 import {
   litPayerSecretKey,
   litRelayApiKey,
   pkpEthAddress,
   yellowstoneProvider,
-} from "./environment";
+} from './environment';
 
 type SerializedBigNumber = {
   hex: string;
-  type: "BigNumber";
+  type: 'BigNumber';
 };
 
 const SELECTED_LIT_NETWORK = LIT_NETWORK.Datil as LIT_NETWORKS_KEYS;
-const DOMAIN = "dashboard.heyvincent.ai";
-const ORIGIN = "https://dashboard.heyvincent.ai";
+const DOMAIN = 'dashboard.heyvincent.ai';
+const ORIGIN = 'https://dashboard.heyvincent.ai';
 
 /**
  * Add PKP to payer's allowed list for free capacity credits
@@ -48,7 +48,7 @@ async function addPayee(ethAddress: string): Promise<void> {
 
   if (!litRelayApiKey || !litPayerSecretKey) {
     console.warn(
-      "   ⚠️  litRelayApiKey or litPayerSecretKey not provided, skipping payee registration"
+      '   ⚠️  litRelayApiKey or litPayerSecretKey not provided, skipping payee registration'
     );
     return;
   }
@@ -58,13 +58,13 @@ async function addPayee(ethAddress: string): Promise<void> {
 
   try {
     const headers = {
-      "api-key": litRelayApiKey,
-      "payer-secret-key": litPayerSecretKey,
-      "Content-Type": "application/json",
+      'api-key': litRelayApiKey,
+      'payer-secret-key': litPayerSecretKey,
+      'Content-Type': 'application/json',
     };
 
-    const response = await fetch("https://datil-relayer.getlit.dev/add-users", {
-      method: "POST",
+    const response = await fetch('https://datil-relayer.getlit.dev/add-users', {
+      method: 'POST',
       headers,
       body: JSON.stringify([ethAddress]),
     });
@@ -81,7 +81,7 @@ async function addPayee(ethAddress: string): Promise<void> {
     console.log(`   ✅ PKP registered with payer - no LIT tokens required!`);
   } catch (err) {
     console.warn(
-      "   ⚠️  Failed to add payee (PKP may need LIT tokens for operations):",
+      '   ⚠️  Failed to add payee (PKP may need LIT tokens for operations):',
       err
     );
   }
@@ -92,18 +92,18 @@ async function addPayee(ethAddress: string): Promise<void> {
  */
 function hexToBase58(hexString: string): string | null {
   try {
-    const cleaned = hexString.startsWith("0x") ? hexString.slice(2) : hexString;
+    const cleaned = hexString.startsWith('0x') ? hexString.slice(2) : hexString;
     if (
       !cleaned ||
       cleaned ===
-        "0000000000000000000000000000000000000000000000000000000000000000"
+        '0000000000000000000000000000000000000000000000000000000000000000'
     ) {
       return null;
     }
-    const bytes = Buffer.from(cleaned, "hex");
+    const bytes = Buffer.from(cleaned, 'hex');
     return bs58.encode(bytes);
   } catch (error) {
-    console.error("Error converting hex to base58:", error);
+    console.error('Error converting hex to base58:', error);
     return null;
   }
 }
@@ -137,7 +137,7 @@ async function getOrMintUserPKP(
   )) as unknown as (IRelayPKP & { tokenId: SerializedBigNumber })[];
 
   if (pkps.length === 0) {
-    console.log("   No existing PKP found. Minting new PKP...");
+    console.log('   No existing PKP found. Minting new PKP...');
 
     const options = {
       permittedAuthMethodScopes: [[AUTH_METHOD_SCOPE.SignAnything]],
@@ -152,12 +152,12 @@ async function getOrMintUserPKP(
       await ethWalletProvider.relay.pollRequestUntilTerminalState(txHash);
 
     if (
-      response.status !== "Succeeded" ||
+      response.status !== 'Succeeded' ||
       !response.pkpTokenId ||
       !response.pkpPublicKey ||
       !response.pkpEthAddress
     ) {
-      throw new Error("PKP minting failed");
+      throw new Error('PKP minting failed');
     }
 
     const userPKP: IRelayPKP = {
@@ -195,17 +195,17 @@ async function getSessionSigs(
   litNodeClient: LitNodeClient
 ) {
   const sessionSigs = await litNodeClient.getPkpSessionSigs({
-    chain: "ethereum",
+    chain: 'ethereum',
     expiration: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(), // 1 day
     pkpPublicKey,
     authMethods: [authMethod],
     resourceAbilityRequests: [
       {
-        resource: new LitActionResource("*"),
+        resource: new LitActionResource('*'),
         ability: LIT_ABILITY.LitActionExecution,
       },
       {
-        resource: new LitPKPResource("*"),
+        resource: new LitPKPResource('*'),
         ability: LIT_ABILITY.PKPSigning,
       },
     ],
@@ -221,7 +221,7 @@ function getContractFromJsSdk(
 ) {
   let contractsDataRes;
   switch (network) {
-    case "datil":
+    case 'datil':
       contractsDataRes = datil;
       break;
     default:
@@ -242,25 +242,25 @@ function getContractFromJsSdk(
 }
 
 export function getPkpNftContract(network: LIT_NETWORKS_KEYS) {
-  return getContractFromJsSdk(network, "PKPNFT", yellowstoneProvider);
+  return getContractFromJsSdk(network, 'PKPNFT', yellowstoneProvider);
 }
 
 /**
  * Mint agent PKP controlled by user PKP
  */
 async function mintAgentPKP(userPKP: IRelayPKP): Promise<IRelayPKP> {
-  console.log("\n🤖 Minting agent PKP...");
+  console.log('\n🤖 Minting agent PKP...');
 
   if (!litRelayApiKey) {
-    throw new Error("litRelayApiKey is required to mint agent PKP");
+    throw new Error('litRelayApiKey is required to mint agent PKP');
   }
 
   const requestBody = {
-    keyType: "2",
-    permittedAuthMethodTypes: ["2"], // PKP type
+    keyType: '2',
+    permittedAuthMethodTypes: ['2'], // PKP type
     permittedAuthMethodIds: [userPKP.tokenId],
-    permittedAuthMethodPubkeys: ["0x"],
-    permittedAuthMethodScopes: [["1"]], // Sign anything scope
+    permittedAuthMethodPubkeys: ['0x'],
+    permittedAuthMethodScopes: [['1']], // Sign anything scope
     addPkpEthAddressAsPermittedAddress: true,
     sendPkpToItself: false,
     burnPkp: false,
@@ -268,12 +268,12 @@ async function mintAgentPKP(userPKP: IRelayPKP): Promise<IRelayPKP> {
   };
 
   const response = await fetch(
-    "https://datil-relayer.getlit.dev/mint-next-and-add-auth-methods",
+    'https://datil-relayer.getlit.dev/mint-next-and-add-auth-methods',
     {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "api-key": litRelayApiKey,
+        'Content-Type': 'application/json',
+        'api-key': litRelayApiKey,
       },
       body: JSON.stringify(requestBody),
     }
@@ -301,14 +301,14 @@ async function mintAgentPKP(userPKP: IRelayPKP): Promise<IRelayPKP> {
   const mintEvent = txReceipt.logs.find((log) => {
     try {
       const parsed = pkpNftContract.interface.parseLog(log);
-      return parsed.name === "PKPMinted";
+      return parsed.name === 'PKPMinted';
     } catch {
       return false;
     }
   });
 
   if (!mintEvent) {
-    throw new Error("PKPMinted event not found in transaction logs");
+    throw new Error('PKPMinted event not found in transaction logs');
   }
 
   const parsed = pkpNftContract.interface.parseLog(mintEvent);
@@ -322,7 +322,7 @@ async function mintAgentPKP(userPKP: IRelayPKP): Promise<IRelayPKP> {
     ethAddress,
   };
 
-  console.log("✅ Agent PKP minted successfully");
+  console.log('✅ Agent PKP minted successfully');
   console.log(`   Token ID: ${agentPKP.tokenId}`);
   console.log(`   Address: ${agentPKP.ethAddress}`);
 
@@ -336,7 +336,7 @@ async function fetchAppInfo(appId: number): Promise<{
   app: any;
   abilities: string[];
 }> {
-  const registryUrl = "https://registry.heyvincent.ai";
+  const registryUrl = 'https://registry.heyvincent.ai';
 
   try {
     const appResponse = await fetch(`${registryUrl}/app/${appId}`);
@@ -462,12 +462,12 @@ export async function setupVincentDelegation({
   // If no PKP address is provided, ensure we have the required env variables
   if (!vincentAppId || !litRelayApiKey || !litPayerSecretKey) {
     throw new Error(
-      "Cannot setup Vincent delegation without vincentAppId, litRelayApiKey and litPayerSecretKey"
+      'Cannot setup Vincent delegation without vincentAppId, litRelayApiKey and litPayerSecretKey'
     );
   }
 
-  console.log("\n🚀 Vincent Account Delegation Setup");
-  console.log("=====================================\n");
+  console.log('\n🚀 Vincent Account Delegation Setup');
+  console.log('=====================================\n');
 
   const litNodeClient = new LitNodeClient({
     alertWhenUnauthorized: false,
@@ -502,18 +502,18 @@ export async function setupVincentDelegation({
       litNodeClient
     );
 
-    console.log("\n💼 Creating user PKP wallet...");
+    console.log('\n💼 Creating user PKP wallet...');
     const userPkpWallet = new PKPEthersWallet({
       controllerSessionSigs: sessionSigs,
       pkpPubKey: userPKP.publicKey,
       litNodeClient: litNodeClient,
     });
     await userPkpWallet.init();
-    console.log("✅ User PKP wallet ready");
+    console.log('✅ User PKP wallet ready');
 
     const { app, abilities } = await fetchAppInfo(vincentAppId);
     if (abilities.length === 0) {
-      throw new Error("No abilities found for this app");
+      throw new Error('No abilities found for this app');
     }
 
     const agentPKP = await mintAgentPKP(userPKP);
@@ -532,9 +532,9 @@ export async function setupVincentDelegation({
       permissionData
     );
 
-    console.log("\n🎉 SUCCESS! Vincent delegation setup complete");
-    console.log("==========================================");
-    console.log("\n📊 Summary:");
+    console.log('\n🎉 SUCCESS! Vincent delegation setup complete');
+    console.log('==========================================');
+    console.log('\n📊 Summary:');
     console.log(`   EOA Address: ${ownerAccount.address}`);
     console.log(`   User PKP Address: ${userPKP.ethAddress}`);
     console.log(`   Agent PKP Address: ${agentPKP.ethAddress}`);
@@ -543,7 +543,7 @@ export async function setupVincentDelegation({
     console.log(`   App Version: ${app.activeVersion}`);
     console.log(`   Abilities Granted: ${abilities.length}`);
 
-    console.log("\n💡 Your agent PKP can now be used with the app!");
+    console.log('\n💡 Your agent PKP can now be used with the app!');
 
     await litNodeClient.disconnect();
 
