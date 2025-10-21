@@ -52,6 +52,7 @@ This POC involves multiple actors and systems working together:
 ## Flow Breakdown
 
 ### Step 1: Setup ZeroDev Smart Account
+
 **File:** `src/setupZeroDevAccount.ts`
 
 - Creates an ECDSA validator using the owner's private key (or generates a random one if not provided)
@@ -60,21 +61,25 @@ This POC involves multiple actors and systems working together:
 - Returns the account address and validator for later use
 
 **Key outputs:**
+
 - `ownerKernelAccount`: The deployed smart account
 - `ownerValidator`: Validator that proves ownership
 - `accountAddress`: The on-chain address of the smart account
 
 ### Step 2: Get or Create Vincent PKP
+
 **File:** `src/setupVincentDelegation.ts`
 
 This step supports two modes of operation:
 
 **Manual Mode (PKP_ETH_ADDRESS provided):**
+
 - Retrieves the PKP (Programmable Key Pair) Ethereum address from environment variables
 - This PKP is obtained from the Vincent Dashboard and represents the delegated signer
 - The PKP is controlled by Lit Protocol's Vincent ability framework
 
 **Automatic Mode (PKP_ETH_ADDRESS not provided):**
+
 - Authenticates with the owner EOA using Lit Protocol's auth system
 - Creates or retrieves a user PKP controlled by the owner EOA
 - Mints an agent PKP controlled by the user PKP
@@ -84,9 +89,11 @@ This step supports two modes of operation:
 - Registers PKPs with Lit's payer for free capacity credits (no LIT tokens required)
 
 **Key output:**
+
 - `pkpEthAddress`: The Ethereum address of the Vincent agent PKP that will sign transactions
 
 ### Step 3: Generate Session Key Permission
+
 **File:** `src/generateZeroDevPermissionAccount.ts`
 
 - Creates an "empty account" for the Vincent PKP address (address without actual signing capability)
@@ -99,9 +106,11 @@ This step supports two modes of operation:
 The serialized account contains all the cryptographic permissions and policies. It can be sent to the backend service, which can then reconstruct the account context without needing the owner's private key.
 
 **Key output:**
+
 - `serializedPermissionAccount`: A string containing all permission data
 
 ### Step 4-5: Generate Aave User Operation
+
 **File:** `src/generateUserOperation.ts`
 
 The backend service receives the serialized permission account and:
@@ -119,28 +128,34 @@ The backend service receives the serialized permission account and:
    - Paymaster data (for gas sponsorship via ZeroDev)
 
 **File:** `src/aave.ts`
+
 - Provides chain-specific Aave protocol addresses using the official Aave Address Book
 - Builds the approval transaction for USDC to be used with Aave lending pool
 
 **Key output:**
+
 - `aaveUserOp`: An unsigned UserOperation ready for signing
 
 ### Step 6-7: Vincent Ability Validation and Signing
+
 **File:** `src/smartAccountIntegration.ts` (lines 43-78)
 
 The unsigned UserOperation is sent to the Vincent ability running on Lit Protocol's network:
 
 #### Precheck Phase:
+
 ```javascript
-await abilityClient.precheck(vincentAbilityParams, vincentDelegationContext)
+await abilityClient.precheck(vincentAbilityParams, vincentDelegationContext);
 ```
 
 #### Execute Phase:
+
 ```javascript
-await abilityClient.execute(vincentAbilityParams, vincentDelegationContext)
+await abilityClient.execute(vincentAbilityParams, vincentDelegationContext);
 ```
 
 **Both phases perform identical validation:**
+
 1. **Decode**: Parses the UserOperation calldata to understand what transactions will execute
 2. **Simulate**: Runs the transaction on-chain (read-only) to see the effects
 3. **Validate**:
@@ -155,9 +170,11 @@ await abilityClient.execute(vincentAbilityParams, vincentDelegationContext)
 This package contains the bundled Vincent ability code that runs inside Lit Protocol's Trusted Execution Environment (TEE).
 
 **Key output:**
+
 - `signedAaveUserOp`: The UserOperation with a valid signature from the Vincent PKP
 
 ### Step 8-9: Broadcast Transaction
+
 **File:** `src/sendPermittedUserOperation.ts`
 
 The service receives the signed UserOperation and:
@@ -169,6 +186,7 @@ The service receives the signed UserOperation and:
 5. Returns the transaction hash
 
 **Key output:**
+
 - Transaction hash confirming on-chain execution
 
 ## Prerequisites
@@ -291,6 +309,7 @@ ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
 #### Getting the required values:
 
 1. **OWNER_PRIVATE_KEY** (Optional): Leave empty to auto-generate, or provide your own:
+
    ```bash
    cast wallet new
    ```
@@ -389,6 +408,7 @@ UserOp hash: 0x...
 ### Transaction Validation
 
 The Vincent ability validates:
+
 1. **Contract allowlist**: Only interactions with known Aave contracts
 2. **Value extraction**: No ETH or tokens leaving the user's control
 3. **Operation safety**: Transactions align with Aave's intended use (lending, borrowing, etc.)
@@ -397,6 +417,7 @@ The Vincent ability validates:
 ### Session Key Security
 
 The session key approach provides:
+
 - **Scoped permissions**: The PKP can only sign for this specific account
 - **Policy enforcement**: Vincent ability enforces strict validation rules
 - **Auditability**: All operations are transparent and verifiable on-chain
@@ -432,6 +453,7 @@ src/
 ### Production Recommendations
 
 1. **Implement strict policies**:
+
    ```typescript
    policies: [
      toCallPolicy({
@@ -439,10 +461,10 @@ src/
          {
            target: AAVE_POOL_ADDRESS,
            selector: APPROVE_SELECTOR,
-         }
-       ]
-     })
-   ]
+         },
+       ],
+     }),
+   ];
    ```
 
 2. **Add spending limits**: Implement per-transaction and per-day limits

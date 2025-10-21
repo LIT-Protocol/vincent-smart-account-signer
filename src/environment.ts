@@ -19,12 +19,19 @@ const PKP_ETH_ADDRESS = process.env.PKP_ETH_ADDRESS;
 const VINCENT_APP_ID = process.env.VINCENT_APP_ID;
 const LIT_PAYER_SECRET_KEY = process.env.LIT_PAYER_SECRET_KEY;
 const LIT_RELAY_API_KEY = process.env.LIT_RELAY_API_KEY;
-if (!PKP_ETH_ADDRESS && (!VINCENT_APP_ID || !LIT_PAYER_SECRET_KEY || !LIT_RELAY_API_KEY)) {
-  throw new Error('Missing PKP_ETH_ADDRESS or VINCENT_APP_ID or LIT_PAYER_SECRET_KEY or LIT_RELAY_API_KEY env variable');
+if (
+  !PKP_ETH_ADDRESS &&
+  (!VINCENT_APP_ID || !LIT_PAYER_SECRET_KEY || !LIT_RELAY_API_KEY)
+) {
+  throw new Error(
+    'Missing PKP_ETH_ADDRESS or VINCENT_APP_ID or LIT_PAYER_SECRET_KEY or LIT_RELAY_API_KEY env variable'
+  );
 }
 
 export const pkpEthAddress = PKP_ETH_ADDRESS as Hex | undefined;
-export const vincentAppId = VINCENT_APP_ID ? parseInt(VINCENT_APP_ID) : undefined;
+export const vincentAppId = VINCENT_APP_ID
+  ? parseInt(VINCENT_APP_ID)
+  : undefined;
 export const litPayerSecretKey = LIT_PAYER_SECRET_KEY;
 export const litRelayApiKey = LIT_RELAY_API_KEY;
 
@@ -49,17 +56,23 @@ export const zerodevPaymaster = createZeroDevPaymasterClient({
 });
 
 const OWNER_PRIVATE_KEY = process.env.OWNER_PRIVATE_KEY as Hex | undefined;
-const generatedOwnerPrivateKey = generatePrivateKey()
+const generatedOwnerPrivateKey = generatePrivateKey();
 if (!OWNER_PRIVATE_KEY) {
   console.log(`Generated owner private key: ${generatedOwnerPrivateKey}`);
-  console.log(`Please set OWNER_PRIVATE_KEY env variable to this value to keep using this account`);
+  console.log(
+    `Please set OWNER_PRIVATE_KEY env variable to this value to keep using this account`
+  );
 }
-export const ownerAccount = privateKeyToAccount(OWNER_PRIVATE_KEY || generatedOwnerPrivateKey);
+export const ownerAccount = privateKeyToAccount(
+  OWNER_PRIVATE_KEY || generatedOwnerPrivateKey
+);
 
-export const yellowstoneProvider = new ethers.providers.JsonRpcProvider(LIT_RPC.CHRONICLE_YELLOWSTONE);
+export const yellowstoneProvider = new ethers.providers.JsonRpcProvider(
+  LIT_RPC.CHRONICLE_YELLOWSTONE
+);
 const delegateeSigner = new ethers.Wallet(
   DELEGATEE_PRIVATE_KEY,
-  yellowstoneProvider,
+  yellowstoneProvider
 );
 export const abilityClient = getVincentAbilityClient({
   bundledVincentAbility,

@@ -21,9 +21,11 @@ export interface GenerateZeroDevSessionKeyParams {
 export async function generateZeroDevPermissionAccount({
   permittedAddress,
   ownerValidator,
-                                                }: GenerateZeroDevSessionKeyParams) {
+}: GenerateZeroDevSessionKeyParams) {
   const sessionEmptyAccount = addressToEmptyAccount(permittedAddress);
-  const sessionEmptySigner = await toECDSASigner({ signer: sessionEmptyAccount });
+  const sessionEmptySigner = await toECDSASigner({
+    signer: sessionEmptyAccount,
+  });
   const permissionValidator = await toPermissionValidator(publicClient, {
     entryPoint,
     kernelVersion,
@@ -33,13 +35,16 @@ export async function generateZeroDevPermissionAccount({
       toSudoPolicy({}),
     ],
   });
-  const permissionKernelAccountToSerialize = await createKernelAccount(publicClient, {
-    entryPoint,
-    kernelVersion,
-    plugins: {
-      sudo: ownerValidator,
-      regular: permissionValidator,
-    },
-  });
+  const permissionKernelAccountToSerialize = await createKernelAccount(
+    publicClient,
+    {
+      entryPoint,
+      kernelVersion,
+      plugins: {
+        sudo: ownerValidator,
+        regular: permissionValidator,
+      },
+    }
+  );
   return await serializePermissionAccount(permissionKernelAccountToSerialize);
 }

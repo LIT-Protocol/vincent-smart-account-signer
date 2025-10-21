@@ -1,20 +1,24 @@
 import { signerToEcdsaValidator } from '@zerodev/ecdsa-validator';
-import {
-  createKernelAccount,
-  createKernelAccountClient,
-} from '@zerodev/sdk';
+import { createKernelAccount, createKernelAccountClient } from '@zerodev/sdk';
 import { zeroAddress } from 'viem';
 import { PrivateKeyAccount } from 'viem/accounts';
 
-import { chain, entryPoint, kernelVersion, publicClient, transport, zerodevPaymaster } from './environment';
+import {
+  chain,
+  entryPoint,
+  kernelVersion,
+  publicClient,
+  transport,
+  zerodevPaymaster,
+} from './environment';
 
 export interface SetupZeroDevAccountParams {
   ownerAccount: PrivateKeyAccount;
 }
 
 export async function setupZeroDevAccount({
-                                            ownerAccount,
-                                          }: SetupZeroDevAccountParams) {
+  ownerAccount,
+}: SetupZeroDevAccountParams) {
   const ownerValidator = await signerToEcdsaValidator(publicClient, {
     entryPoint,
     kernelVersion,
@@ -58,9 +62,10 @@ export async function setupZeroDevAccount({
 
   console.log('Deployment userOp hash:', deployUserOpHash);
 
-  const deployUserOpReceipt = await ownerKernelClient.waitForUserOperationReceipt({
-    hash: deployUserOpHash,
-  });
+  const deployUserOpReceipt =
+    await ownerKernelClient.waitForUserOperationReceipt({
+      hash: deployUserOpHash,
+    });
   console.log({ txHash: deployUserOpReceipt.receipt.transactionHash });
 
   return {

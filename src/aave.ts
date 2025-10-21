@@ -59,14 +59,17 @@ function getAaveAddresses(chainId: number) {
         POOL_ADDRESSES_PROVIDER: addressBook.POOL_ADDRESSES_PROVIDER,
       };
     } catch (error) {
-      console.warn(`Failed to load from Address Book for chain ${chainId}:`, error);
+      console.warn(
+        `Failed to load from Address Book for chain ${chainId}:`,
+        error
+      );
     }
   }
 
   throw new Error(
     `Unsupported chain: ${chainId}. Supported chains: ${[
       ...Object.keys(CHAIN_TO_AAVE_ADDRESS_BOOK),
-    ].join(', ')}`,
+    ].join(', ')}`
   );
 }
 
@@ -93,14 +96,17 @@ function getAvailableMarkets(chainId: number): Record<string, Address> {
 
       return markets;
     } catch (error) {
-      console.warn(`Failed to load markets from Address Book for ${chainId}:`, error);
+      console.warn(
+        `Failed to load markets from Address Book for ${chainId}:`,
+        error
+      );
     }
   }
 
   throw new Error(
     `No markets available for chain: ${chainId}. Supported chains: ${[
       ...Object.keys(CHAIN_TO_AAVE_ADDRESS_BOOK),
-    ].join(', ')}`,
+    ].join(', ')}`
   );
 }
 
@@ -114,9 +120,12 @@ async function buildApprovalTx(
   accountAddress: Address,
   assetAddress: Address,
   poolAddress: Address,
-  amount = String(Math.floor(Math.random() * 1000)),
+  amount = String(Math.floor(Math.random() * 1000))
 ): Promise<Transaction> {
-  const approveData = erc20Iface.encodeFunctionData('approve', [poolAddress, amount]) as Hex;
+  const approveData = erc20Iface.encodeFunctionData('approve', [
+    poolAddress,
+    amount,
+  ]) as Hex;
   const approveTx: Transaction = {
     data: approveData,
     from: accountAddress,
