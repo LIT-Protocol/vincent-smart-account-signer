@@ -1,7 +1,7 @@
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { Hex } from 'viem';
 
-import { abilityClient, alchemyRpc, entryPoint, ownerAccount } from './environment';
+import { abilityClient, alchemyRpc, entryPoint, ownerAccount, vincentAppId } from './environment';
 import { generateUserOperation } from './generateUserOperation';
 import { generateZeroDevPermissionAccount } from './generateZeroDevPermissionAccount';
 import { setupVincentDelegation } from './setupVincentDelegation';
@@ -12,7 +12,7 @@ async function main() {
   // USER
   // Set up smart account owner/delegator
   const { ownerValidator, ownerKernelAccount } = await setupZeroDevAccount({ ownerAccount });
-  const pkpEthAddress = await setupVincentDelegation({ ownerAccount });
+  const pkpEthAddress = await setupVincentDelegation({ ownerAccount, vincentAppId });
 
   // Generate and serialize the session
   const serializedPermissionAccount = await generateZeroDevPermissionAccount({
