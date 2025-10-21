@@ -1,26 +1,18 @@
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { Hex } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
 
-import { abilityClient, alchemyRpc, entryPoint } from './environment';
+import { abilityClient, alchemyRpc, entryPoint, ownerAccount } from './environment';
 import { generateUserOperation } from './generateUserOperation';
 import { generateZeroDevPermissionAccount } from './generateZeroDevPermissionAccount';
 import { setupVincentDelegation } from './setupVincentDelegation';
 import { setupZeroDevAccount } from './setupZeroDevAccount';
 import { sendPermittedUserOperation } from './sendPermittedUserOperation';
 
-const OWNER_PRIVATE_KEY = process.env.OWNER_PRIVATE_KEY as Hex;
-const DELEGATEE_PRIVATE_KEY = process.env.DELEGATEE_PRIVATE_KEY as Hex;
-if (!OWNER_PRIVATE_KEY || !DELEGATEE_PRIVATE_KEY) {
-  throw new Error('Missing env variable');
-}
-
 async function main() {
   // USER
   // Set up smart account owner/delegator
-  const ownerAccount = privateKeyToAccount(OWNER_PRIVATE_KEY);
   const { ownerValidator, ownerKernelAccount } = await setupZeroDevAccount({ ownerAccount });
-  const pkpEthAddress = await setupVincentDelegation({});
+  const pkpEthAddress = await setupVincentDelegation({ ownerAccount });
 
   // Generate and serialize the session
   const serializedPermissionAccount = await generateZeroDevPermissionAccount({

@@ -5,9 +5,14 @@ import { createZeroDevPaymasterClient } from '@zerodev/sdk';
 import { KERNEL_V3_3, getEntryPoint } from '@zerodev/sdk/constants';
 import { ethers } from 'ethers';
 import { Hex, http, createPublicClient } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
 
+const OWNER_PRIVATE_KEY = process.env.OWNER_PRIVATE_KEY as Hex;
 const DELEGATEE_PRIVATE_KEY = process.env.DELEGATEE_PRIVATE_KEY as Hex;
+if (!DELEGATEE_PRIVATE_KEY) {
+  throw new Error('Missing env variable');
+}
 
 export const alchemyRpc = process.env.ALCHEMY_RPC_URL as string;
 export const zerodevRpc = process.env.ZERODEV_RPC_URL as string;
@@ -28,6 +33,8 @@ export const zerodevPaymaster = createZeroDevPaymasterClient({
   chain,
   transport,
 });
+
+export const ownerAccount = privateKeyToAccount(OWNER_PRIVATE_KEY || generatePrivateKey());
 
 const yellowstoneProvider = new ethers.providers.JsonRpcProvider(LIT_RPC.CHRONICLE_YELLOWSTONE);
 const delegateeSigner = new ethers.Wallet(

@@ -54,9 +54,9 @@ This POC involves multiple actors and systems working together:
 ### Step 1: Setup ZeroDev Smart Account
 **File:** `src/setupZeroDevAccount.ts`
 
-- Creates an ECDSA validator using the owner's private key
+- Creates an ECDSA validator using the owner's private key (or generates a random one if not provided)
 - Deploys a Kernel v3.3 smart account on Base Sepolia
-- Deploys the account with an empty user operation
+- Deploys the account with an empty user operation (gas sponsored by ZeroDev paymaster)
 - Returns the account address and validator for later use
 
 **Key outputs:**
@@ -168,9 +168,9 @@ The service receives the signed UserOperation and:
 - A ZeroDev project (for bundler and paymaster)
 - An Alchemy account (for RPC access)
 - A Vincent PKP from Lit Protocol Dashboard
-- Private keys for:
-  - Owner account (controls the smart account)
+- Private key for:
   - Delegatee account (used to interact with Lit Protocol)
+  - Owner account (optional - controls the smart account, auto-generated if not provided)
 
 ## Setup Instructions
 
@@ -197,7 +197,7 @@ cp .env.example .env
 Edit `.env` and fill in the following values:
 
 ```bash
-# Private key of the smart account owner
+# Private key of the smart account owner (optional - will be auto-generated if not provided)
 OWNER_PRIVATE_KEY=0x...
 
 # Private key of the delegatee (used to interact with Lit Protocol)
@@ -215,34 +215,33 @@ ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
 
 #### Getting the required values:
 
-1. **OWNER_PRIVATE_KEY & DELEGATEE_PRIVATE_KEY**: Generate using any Ethereum wallet or:
+1. **OWNER_PRIVATE_KEY** (Optional): Leave empty to auto-generate, or provide your own:
    ```bash
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   node -e "console.log('0x' + require('crypto').randomBytes(32).toString('hex'))"
    ```
-   Add `0x` prefix to the output.
 
-2. **PKP_ETH_ADDRESS**:
+2. **DELEGATEE_PRIVATE_KEY** (Required):
+   - Generate a new private key using:
+     ```bash
+     node -e "console.log('0x' + require('crypto').randomBytes(32).toString('hex'))"
+     ```
+   - **Important**: After generating, you must configure this same private key's address in your Vincent App
+   - This private key represents the app/service that will execute the ability on behalf of the user
+
+3. **PKP_ETH_ADDRESS**:
    - Visit the [Vincent Dashboard](https://vincent.litprotocol.com)
    - Create an account or connect with your EOA
    - Obtain your PKP address from the dashboard
 
-3. **ALCHEMY_RPC_URL**:
+4. **ALCHEMY_RPC_URL**:
    - Sign up at [Alchemy](https://www.alchemy.com)
    - Create a new app for Base Sepolia
    - Copy the HTTPS endpoint
 
-4. **ZERODEV_RPC_URL**:
+5. **ZERODEV_RPC_URL**:
    - Sign up at [ZeroDev](https://zerodev.app)
    - Create a new project
    - Copy the bundler RPC URL
-
-### 4. Fund the owner account
-
-The owner account needs a small amount of ETH on Base Sepolia to deploy the smart account (gas costs are covered by the paymaster, but deployment requires some ETH initially).
-
-Get testnet ETH from:
-- [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-sepolia-faucet)
-- [Alchemy Faucet](https://www.alchemy.com/faucets/base-sepolia)
 
 ## Running the Project
 
@@ -374,10 +373,9 @@ This POC demonstrates a revolutionary approach to delegated signing:
 
 ### Common Issues
 
-1. **"Missing env variable"**: Ensure all variables in `.env` are filled
-2. **"Insufficient funds"**: Owner account needs Base Sepolia ETH
-3. **"Precheck failed"**: Verify PKP address matches the one from Vincent Dashboard
-4. **"User operation failed"**: Check that USDC exists on Base Sepolia in Aave markets
+1. **"Missing env variable"**: Ensure all required variables in `.env` are filled (DELEGATEE_PRIVATE_KEY, PKP_ETH_ADDRESS, ALCHEMY_RPC_URL, ZERODEV_RPC_URL)
+2. **"Precheck failed"**: Verify PKP address matches the one from Vincent Dashboard
+3. **"User operation failed"**: Check that USDC exists on Base Sepolia in Aave markets
 
 ### Debug Mode
 
