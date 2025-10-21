@@ -208,7 +208,7 @@ Before running this POC, you need to create a Vincent app with the appropriate a
 4. **Configure Your Delegator Account**
    - Generate a delegator private key (this will be your `DELEGATEE_PRIVATE_KEY`):
      ```bash
-     node -e "console.log('0x' + require('crypto').randomBytes(32).toString('hex'))"
+     cast wallet new
      ```
    - In the app settings, add the Ethereum address derived from this private key as an authorized delegator
    - This allows your backend service to interact with the Vincent ability on behalf of users
@@ -292,7 +292,7 @@ ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
 
 1. **OWNER_PRIVATE_KEY** (Optional): Leave empty to auto-generate, or provide your own:
    ```bash
-   node -e "console.log('0x' + require('crypto').randomBytes(32).toString('hex'))"
+   cast wallet new
    ```
 
 2. **VINCENT_APP_ID** (Required):
@@ -303,7 +303,7 @@ ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
 3. **DELEGATEE_PRIVATE_KEY** (Required):
    - Generate a new private key using:
      ```bash
-     node -e "console.log('0x' + require('crypto').randomBytes(32).toString('hex'))"
+     cast wallet new
      ```
    - **Important**: After generating, you must configure this same private key's address in your Vincent App
    - This private key represents the app/service that will execute the ability on behalf of the user
