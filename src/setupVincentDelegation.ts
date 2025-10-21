@@ -53,8 +53,8 @@ async function addPayee(ethAddress: string): Promise<void> {
     return;
   }
 
-  console.log(`   📋 litRelayApiKey: ${litRelayApiKey}`);
-  console.log(`   📋 litPayerSecretKey: ${litPayerSecretKey}`);
+  // Removed logging of sensitive credentials for security reasons.
+  // Removed logging of sensitive credentials for security reasons.
 
   try {
     const headers = {
