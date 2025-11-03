@@ -1,5 +1,5 @@
 {
-  "name": "vincent-smart-account-intergration",
+  "name": "vincent-smart-account-integration",
   "version": "0.0.1",
   "main": "src/index.ts",
   "type": "module",
