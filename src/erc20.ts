@@ -1,9 +1,11 @@
-import { ethers, type ContractInterface } from 'ethers';
+import { getContract, type Abi, type Address, type WalletClient } from 'viem';
+
+import { publicClient } from './environment';
 
 /**
  * ERC20 Token ABI - Essential methods only
  */
-export const ERC20_ABI: ContractInterface = [
+export const ERC20_ABI: Abi = [
   {
     inputs: [{ internalType: 'address', name: 'account', type: 'address' }],
     name: 'balanceOf',
@@ -38,11 +40,28 @@ export const ERC20_ABI: ContractInterface = [
     stateMutability: 'view',
     type: 'function',
   },
-];
+  {
+    inputs: [
+      { internalType: 'address', name: 'to', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+    ],
+    name: 'transfer',
+    outputs: [{ internalType: 'bool', name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+] as const;
 
-export const erc20Iface = new ethers.utils.Interface(ERC20_ABI);
+export const getErc20ReadContract = (address: Address) =>
+  getContract({
+    address,
+    abi: ERC20_ABI,
+    client: publicClient,
+  });
 
-export const getErc20Contract = (
-  provider: ethers.providers.JsonRpcProvider,
-  address: string
-) => new ethers.Contract(address, ERC20_ABI, provider);
+export const getErc20WriteContract = (address: Address, walletClient: WalletClient) =>
+  getContract({
+    address,
+    abi: ERC20_ABI,
+    client: { public: publicClient, wallet: walletClient },
+  });

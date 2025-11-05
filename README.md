@@ -121,6 +121,7 @@ The backend service receives the serialized permission account and:
    - Gets USDC token address for the chain (from Aave Address Book)
    - Gets Aave Pool address
    - Encodes an `approve(spender, amount)` call
+   - When providing `AAVE_USDC_PRIVATE_KEY` with USDC from their Aave's faucet, `deposit` and `withdraw` operations will also be bundled after the approval 
 4. Prepares an **unsigned UserOperation** containing:
    - Transaction calldata
    - Gas limits and fee parameters
@@ -130,7 +131,7 @@ The backend service receives the serialized permission account and:
 **File:** `src/aave.ts`
 
 - Provides chain-specific Aave protocol addresses using the official Aave Address Book
-- Builds the approval transaction for USDC to be used with Aave lending pool
+- Builds the Aave user operation to use USDC in an Aave lending pool
 
 **Key output:**
 
@@ -282,6 +283,9 @@ cp .env.example .env
 Edit `.env` and fill in the following values:
 
 ```bash
+# Private key that holds some USDC to also test the deposit/withdraw functionality and multicall user operations (optional)
+AAVE_USDC_PRIVATE_KEY=0x...
+
 # Private key of the smart account owner (optional - will be auto-generated if not provided)
 OWNER_PRIVATE_KEY=0x...
 
@@ -308,18 +312,23 @@ ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
 
 #### Getting the required values:
 
-1. **OWNER_PRIVATE_KEY** (Optional): Leave empty to auto-generate, or provide your own:
+1. **AAVE_USDC_PRIVATE_KEY** (Optional): Leave empty to only bundle ERC-20 approvals in the user operations, or provide your own:
+   - Pick a private key to receive USDC from the Aave faucet
+   - Visit the [Aave Faucet](https://faucet.aave.com/)
+   - Get USDC from the faucet into your private key
+
+2. **OWNER_PRIVATE_KEY** (Optional): Leave empty to auto-generate, or provide your own:
 
    ```bash
    cast wallet new
    ```
 
-2. **VINCENT_APP_ID** (Required):
+3. **VINCENT_APP_ID** (Required):
    - Visit the [Vincent Dashboard](https://dashboard.heyvincent.ai)
    - Find your app or create a new one
    - Copy the App ID (numeric value)
 
-3. **DELEGATEE_PRIVATE_KEY** (Required):
+4. **DELEGATEE_PRIVATE_KEY** (Required):
    - Generate a new private key using:
      ```bash
      cast wallet new
@@ -327,7 +336,7 @@ ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
    - **Important**: After generating, you must configure this same private key's address in your Vincent App
    - This private key represents the app/service that will execute the ability on behalf of the user
 
-4. **PKP Setup** - Choose one of two approaches:
+5. **PKP Setup** - Choose one of two approaches:
 
    **Option A: Manual PKP Setup (Recommended for production)**
    - Visit the [Vincent Dashboard](https://dashboard.heyvincent.ai)
@@ -348,12 +357,12 @@ ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
      - Delegate the app to the agent PKP
      - Return the agent PKP address
 
-5. **ALCHEMY_RPC_URL**:
+6. **ALCHEMY_RPC_URL**:
    - Sign up at [Alchemy](https://www.alchemy.com)
    - Create a new app for Base Sepolia
    - Copy the HTTPS endpoint
 
-6. **ZERODEV_RPC_URL**:
+7. **ZERODEV_RPC_URL**:
    - Sign up at [ZeroDev](https://zerodev.app)
    - Create a new project
    - Copy the bundler RPC URL

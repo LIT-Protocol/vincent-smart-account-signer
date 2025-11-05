@@ -4,7 +4,7 @@ import { getVincentAbilityClient } from '@lit-protocol/vincent-app-sdk/abilityCl
 import { createZeroDevPaymasterClient } from '@zerodev/sdk';
 import { KERNEL_V3_3, getEntryPoint } from '@zerodev/sdk/constants';
 import { ethers } from 'ethers';
-import { Hex, http, createPublicClient } from 'viem';
+import { Hex, http, createPublicClient, createWalletClient } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
 
@@ -54,6 +54,13 @@ export const zerodevPaymaster = createZeroDevPaymasterClient({
   chain,
   transport,
 });
+
+const aaveUsdcProviderPrivateKey = process.env.AAVE_USDC_PRIVATE_KEY as Hex | undefined;
+export const aaveUsdcProviderWalletClient = aaveUsdcProviderPrivateKey ? createWalletClient({
+  chain,
+  transport,
+  account: privateKeyToAccount(aaveUsdcProviderPrivateKey),
+}) : undefined;
 
 const OWNER_PRIVATE_KEY = process.env.OWNER_PRIVATE_KEY as Hex | undefined;
 const generatedOwnerPrivateKey = generatePrivateKey();

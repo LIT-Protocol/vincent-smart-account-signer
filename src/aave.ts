@@ -17,9 +17,38 @@ import {
   AaveV3OptimismSepolia,
   AaveV3ScrollSepolia,
 } from '@bgd-labs/aave-address-book';
-import { Address, Hex } from 'viem';
+import { encodeFunctionData, type Abi, type Address, type Hex } from 'viem';
 
-import { erc20Iface } from './erc20';
+import { ERC20_ABI } from './erc20';
+
+/**
+ * AAVE v3 Pool Contract ABI - Essential methods only
+ */
+export const AAVE_POOL_ABI: Abi = [
+  {
+    inputs: [
+      { internalType: 'address', name: 'asset', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+      { internalType: 'address', name: 'onBehalfOf', type: 'address' },
+      { internalType: 'uint16', name: 'referralCode', type: 'uint16' },
+    ],
+    name: 'supply',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { internalType: 'address', name: 'asset', type: 'address' },
+      { internalType: 'uint256', name: 'amount', type: 'uint256' },
+      { internalType: 'address', name: 'to', type: 'address' },
+    ],
+    name: 'withdraw',
+    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+] as const;
 
 /**
  * Chain id to Aave Address Book mapping
@@ -76,7 +105,7 @@ function getAaveAddresses(chainId: number) {
 /**
  * Get available markets (asset addresses) for a specific chain using the Aave Address Book
  */
-function getAvailableMarkets(chainId: number): Record<string, Address> {
+export function getAvailableMarkets(chainId: number): Record<string, Address> {
   // First try to get from the official Address Book
   if (chainId in CHAIN_TO_AAVE_ADDRESS_BOOK) {
     try {
@@ -122,10 +151,11 @@ async function buildApprovalTx(
   poolAddress: Address,
   amount = String(Math.floor(Math.random() * 1000))
 ): Promise<Transaction> {
-  const approveData = erc20Iface.encodeFunctionData('approve', [
-    poolAddress,
-    amount,
-  ]) as Hex;
+  const approveData = encodeFunctionData({
+    abi: ERC20_ABI,
+    functionName: 'approve',
+    args: [poolAddress, amount],
+  });
   const approveTx: Transaction = {
     data: approveData,
     from: accountAddress,
@@ -137,20 +167,110 @@ async function buildApprovalTx(
 
 export interface AaveApprovalTxParams {
   accountAddress: Address;
+  amount?: string;
+  assetAddress: Address;
   chainId: number;
 }
 
 export async function getAaveApprovalTx({
   accountAddress,
+  assetAddress,
   chainId,
+  amount,
 }: AaveApprovalTxParams) {
   const { POOL } = getAaveAddresses(chainId);
 
-  const markets = getAvailableMarkets(chainId);
-  const asset = markets['USDC'];
-  if (!asset) {
-    throw new Error(`USDC not found in Aave markets for chain ${chainId}`);
-  }
+  return await buildApprovalTx(accountAddress, assetAddress, POOL, amount);
+}
 
-  return await buildApprovalTx(accountAddress, asset, POOL);
+export interface AaveSupplyTxParams {
+  accountAddress: Address;
+  amount: string;
+  assetAddress: Address;
+  chainId: number;
+  onBehalfOf?: Address;
+  referralCode?: number;
+}
+
+async function buildSupplyTx(
+  accountAddress: Address,
+  assetAddress: Address,
+  poolAddress: Address,
+  amount: string,
+  onBehalfOf: Address = accountAddress,
+  referralCode: number = 0
+): Promise<Transaction> {
+  const supplyData = encodeFunctionData({
+    abi: AAVE_POOL_ABI,
+    functionName: 'supply',
+    args: [assetAddress, amount, onBehalfOf, referralCode],
+  });
+  const supplyTx: Transaction = {
+    data: supplyData,
+    from: accountAddress,
+    to: poolAddress,
+  };
+
+  return supplyTx;
+}
+
+export async function getAaveSupplyTx({
+  accountAddress,
+  amount,
+  assetAddress,
+  chainId,
+  onBehalfOf,
+  referralCode,
+}: AaveSupplyTxParams) {
+  const { POOL } = getAaveAddresses(chainId);
+
+  return await buildSupplyTx(
+    accountAddress,
+    assetAddress,
+    POOL,
+    amount,
+    onBehalfOf,
+    referralCode
+  );
+}
+
+export interface AaveWithdrawTxParams {
+  accountAddress: Address;
+  amount: string;
+  assetAddress: Address;
+  chainId: number;
+  to?: Address;
+}
+
+async function buildWithdrawTx(
+  accountAddress: Address,
+  assetAddress: Address,
+  poolAddress: Address,
+  amount: string,
+  to: Address = accountAddress
+): Promise<Transaction> {
+  const withdrawData = encodeFunctionData({
+    abi: AAVE_POOL_ABI,
+    functionName: 'withdraw',
+    args: [assetAddress, amount, to],
+  });
+  const withdrawTx: Transaction = {
+    data: withdrawData,
+    from: accountAddress,
+    to: poolAddress,
+  };
+
+  return withdrawTx;
+}
+
+export async function getAaveWithdrawTx({
+  accountAddress,
+  amount,
+  assetAddress,
+  chainId,
+  to,
+}: AaveWithdrawTxParams) {
+  const { POOL } = getAaveAddresses(chainId);
+
+  return await buildWithdrawTx(accountAddress, assetAddress, POOL, amount, to);
 }

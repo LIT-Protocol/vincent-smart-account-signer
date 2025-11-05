@@ -59,8 +59,8 @@ async function main() {
       '0x' + aaveUserOp.paymasterPostOpGasLimit?.toString(16),
   };
   const vincentAbilityParams = {
+    alchemyRpcUrl: alchemyRpc,
     entryPointAddress: entryPoint.address,
-    rpcUrl: alchemyRpc,
     serializedZeroDevPermissionAccount: serializedPermissionAccount,
     userOp: vincentUserOp,
   };
