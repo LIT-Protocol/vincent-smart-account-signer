@@ -1,5 +1,7 @@
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { Hex, parseUnits } from 'viem';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - yargs types exist but TypeScript has trouble resolving them with bundler moduleResolution
 import yargs from 'yargs';
 
 import { chain, alchemyRpc, entryPoint, abilityClient } from '../environment';
@@ -52,7 +54,6 @@ async function main() {
   aaveTransactions.push(aaveSupplyTx);
 
   // convert the transactions array to a proper zerodev user op
-
   const aaveUserOp = await transactionsToUserOp({
     transactions: aaveTransactions,
     accountAddress: ownerKernelAccount.address,

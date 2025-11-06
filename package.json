@@ -13,6 +13,7 @@
   "description": "",
   "devDependencies": {
     "@types/node": "^24.7.1",
+    "@types/yargs": "^17.0.34",
     "prettier": "^3.6.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"

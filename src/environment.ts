@@ -1,6 +1,9 @@
 import { LIT_RPC } from '@lit-protocol/constants';
 import { bundledVincentAbility } from '@lit-protocol/vincent-ability-aave-smart-account';
-import { getVincentAbilityClient } from '@lit-protocol/vincent-app-sdk/abilityClient';
+import {
+  getVincentAbilityClient,
+  type VincentAbilityClient,
+} from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { createZeroDevPaymasterClient } from '@zerodev/sdk';
 import { KERNEL_V3_3, getEntryPoint } from '@zerodev/sdk/constants';
 import { ethers } from 'ethers';
@@ -55,12 +58,16 @@ export const zerodevPaymaster = createZeroDevPaymasterClient({
   transport,
 });
 
-const aaveUsdcProviderPrivateKey = process.env.AAVE_USDC_PRIVATE_KEY as Hex | undefined;
-export const aaveUsdcProviderWalletClient = aaveUsdcProviderPrivateKey ? createWalletClient({
-  chain,
-  transport,
-  account: privateKeyToAccount(aaveUsdcProviderPrivateKey),
-}) : undefined;
+const aaveUsdcProviderPrivateKey = process.env.AAVE_USDC_PRIVATE_KEY as
+  | Hex
+  | undefined;
+export const aaveUsdcProviderWalletClient = aaveUsdcProviderPrivateKey
+  ? createWalletClient({
+      chain,
+      transport,
+      account: privateKeyToAccount(aaveUsdcProviderPrivateKey),
+    })
+  : undefined;
 
 const OWNER_PRIVATE_KEY = process.env.OWNER_PRIVATE_KEY as Hex | undefined;
 const generatedOwnerPrivateKey = generatePrivateKey();
@@ -77,11 +84,18 @@ export const ownerAccount = privateKeyToAccount(
 export const yellowstoneProvider = new ethers.providers.JsonRpcProvider(
   LIT_RPC.CHRONICLE_YELLOWSTONE
 );
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - Type instantiation is excessively deep due to zod schema types in vincent-app-sdk
 const delegateeSigner = new ethers.Wallet(
   DELEGATEE_PRIVATE_KEY,
   yellowstoneProvider
 );
+
+// Type assertion to avoid deep type instantiation issues with zod types
+// The type inference fails due to complex generic types from zod schemas in the vincent-app-sdk
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - Type instantiation is excessively deep due to zod schema types
 export const abilityClient = getVincentAbilityClient({
   bundledVincentAbility,
   ethersSigner: delegateeSigner,
-});
+}) as any;
