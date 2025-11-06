@@ -1,3 +1,4 @@
+import { type UserOperation } from '@zerodev/sdk';
 import { toHex } from 'viem';
 
 export function serializeUserOpForVincent(aaveUserOp: UserOperation) {

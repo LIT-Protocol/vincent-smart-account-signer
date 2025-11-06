@@ -8,14 +8,14 @@ import {
   ownerAccount,
   vincentAppId,
 } from './environment';
-import { generateTransactions } from './generateTransactions';
-import { generateZeroDevPermissionAccount } from './generateZeroDevPermissionAccount';
-import { setupVincentDelegation } from './setupVincentDelegation';
-import { setupZeroDevAccount } from './setupZeroDevAccount';
-import { sendPermittedUserOperation } from './sendPermittedUserOperation';
-import { transactionsToUserOp } from './transactionsToUserOp';
-import { serializeUserOpForVincent } from './serializeUserOpForVincent';
-import { setupSmartAccountAndDelegation } from './setupSmartAccountAndDelegation';
+import { generateTransactions } from './utils/generateTransactions';
+import { generateZeroDevPermissionAccount } from './utils/generateZeroDevPermissionAccount';
+import { setupVincentDelegation } from './utils/setupVincentDelegation';
+import { setupZeroDevAccount } from './utils/setupZeroDevAccount';
+import { sendPermittedUserOperation } from './utils/sendPermittedUserOperation';
+import { transactionsToUserOp } from './utils/transactionsToUserOp';
+import { serializeUserOpForVincent } from './utils/serializeUserOpForVincent';
+import { setupSmartAccountAndDelegation } from './utils/setupSmartAccountAndDelegation';
 
 async function main() {
   // USER

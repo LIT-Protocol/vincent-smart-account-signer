@@ -29,7 +29,7 @@ import {
   litRelayApiKey,
   pkpEthAddress,
   yellowstoneProvider,
-} from './environment';
+} from '../environment';
 
 type SerializedBigNumber = {
   hex: string;

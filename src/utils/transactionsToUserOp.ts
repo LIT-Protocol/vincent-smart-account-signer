@@ -2,6 +2,7 @@ import { Address } from 'viem';
 import { deserializePermissionAccount } from '@zerodev/permissions';
 import { toECDSASigner } from '@zerodev/permissions/signers';
 import { createKernelAccountClient, addressToEmptyAccount } from '@zerodev/sdk';
+import { toHex } from 'viem';
 
 import {
   chain,
@@ -10,19 +11,21 @@ import {
   publicClient,
   transport,
   zerodevPaymaster,
-} from './environment';
+} from '../environment';
+import { Transaction } from '../aave';
 
-export interface SendPermittedUserOperationParams {
+export interface TransactionsToUserOpParams {
+  transactions: Transaction[];
+  accountAddress: Address;
   permittedAddress: Address;
   serializedPermissionAccount: string;
-  signedUserOp: any;
 }
-
-export async function sendPermittedUserOperation({
+export async function transactionsToUserOp({
+  transactions,
+  accountAddress,
   permittedAddress,
   serializedPermissionAccount,
-  signedUserOp,
-}: SendPermittedUserOperationParams) {
+}: TransactionsToUserOpParams) {
   const vincentEmptyAccount = addressToEmptyAccount(permittedAddress);
   const vincentAbilitySigner = await toECDSASigner({
     signer: vincentEmptyAccount,
@@ -47,14 +50,15 @@ export async function sendPermittedUserOperation({
     },
   });
 
-  console.log(`Broadcasting user op to the network...`);
-  const aaveUserOpHash =
-    await permissionKernelClient.sendUserOperation(signedUserOp);
-  console.log('UserOp hash:', aaveUserOpHash);
+  const callData = await permissionKernelAccount.encodeCalls(
+    transactions.map((tx) => ({ data: tx.data, to: tx.to }))
+  );
+  const aaveUserOp = await permissionKernelClient.prepareUserOperation({
+    callData,
+  });
 
-  const aaveUserOpReceipt =
-    await permissionKernelClient.waitForUserOperationReceipt({
-      hash: aaveUserOpHash,
-    });
-  console.log({ txHash: aaveUserOpReceipt.receipt.transactionHash });
+  console.log(`Aave unsigned userOp:`);
+  console.dir(aaveUserOp, { depth: null });
+
+  return aaveUserOp;
 }

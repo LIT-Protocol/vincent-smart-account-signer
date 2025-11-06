@@ -19,7 +19,7 @@ import {
 } from '@bgd-labs/aave-address-book';
 import { encodeFunctionData, type Abi, type Address, type Hex } from 'viem';
 
-import { ERC20_ABI } from './erc20';
+import { ERC20_ABI } from './utils/erc20';
 
 /**
  * AAVE v3 Pool Contract ABI - Essential methods only

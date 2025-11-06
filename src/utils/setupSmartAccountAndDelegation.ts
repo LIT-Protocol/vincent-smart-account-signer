@@ -1,7 +1,7 @@
 import { setupZeroDevAccount } from './setupZeroDevAccount';
 import { setupVincentDelegation } from './setupVincentDelegation';
 import { generateZeroDevPermissionAccount } from './generateZeroDevPermissionAccount';
-import { ownerAccount, vincentAppId } from './environment';
+import { ownerAccount, vincentAppId } from '../environment';
 
 export async function setupSmartAccountAndDelegation() {
   // Set up smart account owner/delegator

@@ -8,7 +8,7 @@ import {
   getAaveSupplyTx,
   getAaveWithdrawTx,
   getAvailableMarkets,
-} from './aave';
+} from '../aave';
 import {
   aaveUsdcProviderWalletClient,
   chain,
@@ -17,7 +17,7 @@ import {
   transport,
   publicClient,
   zerodevPaymaster,
-} from './environment';
+} from '../environment';
 import { getErc20ReadContract, getErc20WriteContract } from './erc20';
 
 export interface GenerateTransactionsParams {

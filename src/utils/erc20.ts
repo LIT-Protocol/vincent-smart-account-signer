@@ -1,6 +1,6 @@
 import { getContract, type Abi, type Address, type WalletClient } from 'viem';
 
-import { publicClient } from './environment';
+import { publicClient } from '../environment';
 
 /**
  * ERC20 Token ABI - Essential methods only

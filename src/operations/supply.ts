@@ -5,10 +5,10 @@ import { Hex, parseUnits } from 'viem';
 import yargs from 'yargs';
 
 import { chain, alchemyRpc, entryPoint, abilityClient } from '../environment';
-import { sendPermittedUserOperation } from '../sendPermittedUserOperation';
-import { setupSmartAccountAndDelegation } from '../setupSmartAccountAndDelegation';
-import { transactionsToUserOp } from '../transactionsToUserOp';
-import { serializeUserOpForVincent } from '../serializeUserOpForVincent';
+import { sendPermittedUserOperation } from '../utils/sendPermittedUserOperation';
+import { setupSmartAccountAndDelegation } from '../utils/setupSmartAccountAndDelegation';
+import { transactionsToUserOp } from '../utils/transactionsToUserOp';
+import { serializeUserOpForVincent } from '../utils/serializeUserOpForVincent';
 import {
   getAaveApprovalTx,
   getAaveSupplyTx,
