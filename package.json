@@ -7,6 +7,8 @@
     "smart-account-integration": "tsx --env-file .env src/smartAccountIntegration.ts",
     "operations:supply": "tsx --env-file .env src/operations/supply.ts",
     "operations:withdraw": "tsx --env-file .env src/operations/withdraw.ts",
+    "operations:borrow": "tsx --env-file .env src/operations/borrow.ts",
+    "operations:repay": "tsx --env-file .env src/operations/repay.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "FedericoAmura",
@@ -30,7 +32,7 @@
     "@lit-protocol/pkp-ethers": "^7.3.1",
     "@lit-protocol/types": "^7.3.1",
     "@lit-protocol/vincent-ability-aave-smart-account": "0.0.9-mma",
-    "@lit-protocol/vincent-app-sdk": "^2.2.3",
+    "@lit-protocol/vincent-app-sdk": "2.2.4-alpha",
     "@lit-protocol/vincent-contracts-sdk": "^2.0.0",
     "@zerodev/ecdsa-validator": "^5.4.9",
     "@zerodev/permissions": "^5.6.2",

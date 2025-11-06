@@ -98,4 +98,5 @@ const delegateeSigner = new ethers.Wallet(
 export const abilityClient = getVincentAbilityClient({
   bundledVincentAbility,
   ethersSigner: delegateeSigner,
+  debug: false
 }) as any;
