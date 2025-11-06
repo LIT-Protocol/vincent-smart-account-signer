@@ -139,7 +139,7 @@ export function getAvailableMarkets(chainId: number): Record<string, Address> {
   );
 }
 
-interface Transaction {
+export interface Transaction {
   data: Hex;
   from: Address;
   to: Address;

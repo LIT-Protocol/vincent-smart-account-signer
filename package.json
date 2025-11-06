@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "smart-account-integration": "tsx --env-file .env src/smartAccountIntegration.ts",
+    "operations:supply": "tsx --env-file .env src/operations/supply.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "FedericoAmura",
@@ -26,7 +27,7 @@
     "@lit-protocol/lit-node-client": "^7.3.1",
     "@lit-protocol/pkp-ethers": "^7.3.1",
     "@lit-protocol/types": "^7.3.1",
-    "@lit-protocol/vincent-ability-aave-smart-account": "0.0.8-mma",
+    "@lit-protocol/vincent-ability-aave-smart-account": "0.0.9-mma",
     "@lit-protocol/vincent-app-sdk": "^2.2.3",
     "@lit-protocol/vincent-contracts-sdk": "^2.0.0",
     "@zerodev/ecdsa-validator": "^5.4.9",
@@ -37,6 +38,7 @@
     "ethers": "^5.8.0",
     "tslib": "2.8.1",
     "uint8arrays": "^5.1.0",
-    "viem": "^2.38.0"
+    "viem": "^2.38.0",
+    "yargs": "^18.0.0"
   }
 }

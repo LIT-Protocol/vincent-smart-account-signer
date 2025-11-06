@@ -53,9 +53,6 @@ async function addPayee(ethAddress: string): Promise<void> {
     return;
   }
 
-  // Removed logging of sensitive credentials for security reasons.
-  // Removed logging of sensitive credentials for security reasons.
-
   try {
     const headers = {
       'api-key': litRelayApiKey,

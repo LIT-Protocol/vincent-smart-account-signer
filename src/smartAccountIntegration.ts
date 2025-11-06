@@ -1,5 +1,5 @@
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
-import { Hex } from 'viem';
+import { Hex, toHex } from 'viem';
 
 import {
   abilityClient,
@@ -8,61 +8,43 @@ import {
   ownerAccount,
   vincentAppId,
 } from './environment';
-import { generateUserOperation } from './generateUserOperation';
+import { generateTransactions } from './generateTransactions';
 import { generateZeroDevPermissionAccount } from './generateZeroDevPermissionAccount';
 import { setupVincentDelegation } from './setupVincentDelegation';
 import { setupZeroDevAccount } from './setupZeroDevAccount';
 import { sendPermittedUserOperation } from './sendPermittedUserOperation';
+import { transactionsToUserOp } from './transactionsToUserOp';
+import { serializeUserOpForVincent } from './serializeUserOpForVincent';
+import { setupSmartAccountAndDelegation } from './setupSmartAccountAndDelegation';
 
 async function main() {
   // USER
-  // Set up smart account owner/delegator
-  const { ownerValidator, ownerKernelAccount } = await setupZeroDevAccount({
-    ownerAccount,
-  });
-  const pkpEthAddress = await setupVincentDelegation({
-    ownerAccount,
-    vincentAppId,
-  });
-
-  // Generate and serialize the session
-  const serializedPermissionAccount = await generateZeroDevPermissionAccount({
-    permittedAddress: pkpEthAddress,
-    ownerValidator,
-  });
+  const { ownerKernelAccount, pkpEthAddress, serializedPermissionAccount } =
+    await setupSmartAccountAndDelegation();
 
   // CLIENT (APP BACKEND)
-  const aaveUserOp = await generateUserOperation({
+  const transactions = await generateTransactions({
     accountAddress: ownerKernelAccount.address,
     permittedAddress: pkpEthAddress,
     serializedPermissionAccount,
   });
 
-  console.log(`Aave unsigned userOp:`);
-  console.dir(aaveUserOp, { depth: null });
+  const aaveUserOp = await transactionsToUserOp({
+    transactions,
+    accountAddress: ownerKernelAccount.address,
+    permittedAddress: pkpEthAddress,
+    serializedPermissionAccount,
+  });
 
   console.log(
     `Sending user op and serialized session signer to the Lit Signer...`
   );
 
-  const vincentUserOp = {
-    ...aaveUserOp,
-    maxFeePerGas: '0x' + aaveUserOp.maxFeePerGas?.toString(16),
-    maxPriorityFeePerGas: '0x' + aaveUserOp.maxPriorityFeePerGas?.toString(16),
-    nonce: '0x' + aaveUserOp.nonce?.toString(16),
-    callGasLimit: '0x' + aaveUserOp.callGasLimit?.toString(16),
-    verificationGasLimit: '0x' + aaveUserOp.verificationGasLimit?.toString(16),
-    preVerificationGas: '0x' + aaveUserOp.preVerificationGas?.toString(16),
-    paymasterVerificationGasLimit:
-      '0x' + aaveUserOp.paymasterVerificationGasLimit?.toString(16),
-    paymasterPostOpGasLimit:
-      '0x' + aaveUserOp.paymasterPostOpGasLimit?.toString(16),
-  };
   const vincentAbilityParams = {
     alchemyRpcUrl: alchemyRpc,
     entryPointAddress: entryPoint.address,
     serializedZeroDevPermissionAccount: serializedPermissionAccount,
-    userOp: vincentUserOp,
+    userOp: serializeUserOpForVincent(aaveUserOp),
   };
   const vincentDelegationContext = {
     delegatorPkpEthAddress: pkpEthAddress,
