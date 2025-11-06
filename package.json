@@ -6,6 +6,7 @@
   "scripts": {
     "smart-account-integration": "tsx --env-file .env src/smartAccountIntegration.ts",
     "operations:supply": "tsx --env-file .env src/operations/supply.ts",
+    "operations:withdraw": "tsx --env-file .env src/operations/withdraw.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "FedericoAmura",
