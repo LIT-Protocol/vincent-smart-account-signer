@@ -392,10 +392,13 @@ Each operation script demonstrates how to execute a single transaction type thro
 
 Example commands:
 ```bash
+# Supply/withdraw operations (USDC is default)
 npm run operations:supply -- --amount 10        # Supply 10 USDC
 npm run operations:withdraw -- --amount 5       # Withdraw 5 USDC
-npm run operations:borrow -- --amount 0.001 --asset WETH   # Borrow 0.001 WETH
-npm run operations:repay -- --amount 0.001 --asset WETH    # Repay 0.001 WETH
+
+# Borrow/repay operations (must specify asset address)
+npm run operations:borrow -- --amount 0.001 --asset 0x4200000000000000000000000000000000000006  # Borrow 0.001 WETH
+npm run operations:repay -- --amount 0.001 --asset 0x4200000000000000000000000000000000000006   # Repay 0.001 WETH
 ```
 
 ### Expected Output

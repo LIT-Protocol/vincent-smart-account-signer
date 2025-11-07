@@ -58,9 +58,7 @@ npm run operations:repay -- --amount <amount> --asset <asset>
 All commands support the following options:
 
 - `--amount, -a` (required): Amount to transact
-- `--asset, -s` (required for borrow/repay): Asset to use
-  - Can be a token symbol (e.g., `USDC`, `WETH`)
-  - Or a full address (e.g., `0x4200000000000000000000000000000000000006`)
+- `--asset, -s` (required for borrow/repay): Asset contract address (e.g., `0x4200000000000000000000000000000000000006` for WETH)
 
 ## Examples
 
@@ -69,23 +67,18 @@ All commands support the following options:
 npm run operations:supply -- --amount 10            # Supply 10 USDC
 npm run operations:withdraw -- --amount 5           # Withdraw 5 USDC
 
-# Borrow/Repay operations (must specify asset)
-npm run operations:borrow -- --amount 0.001 --asset WETH      # Borrow 0.001 WETH
-npm run operations:repay -- --amount 0.001 --asset WETH       # Repay 0.001 WETH
-
-# Using explicit addresses
-npm run operations:borrow -- --amount 100 --asset 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913  # USDC on Base
-npm run operations:repay -- --amount 0.001 --asset 0x4200000000000000000000000000000000000006   # WETH on Base
+# Borrow/Repay operations (must provide asset address)
+npm run operations:borrow -- --amount 0.001 --asset 0x4200000000000000000000000000000000000006   # Borrow 0.001 WETH
+npm run operations:repay -- --amount 0.001 --asset 0x4200000000000000000000000000000000000006    # Repay 0.001 WETH
 ```
 
-## Supported Assets on Base Sepolia
+## Asset Addresses on Base Sepolia
 
-The operations automatically resolve common asset symbols to their addresses:
-- `USDC`: USD Coin
-- `WETH`: Wrapped Ether
-- Other assets available in Aave's Base Sepolia deployment
+Common asset addresses for Base Sepolia:
+- WETH: `0x4200000000000000000000000000000000000006`
+- USDC: `0x036CbD53842c5426634e7929541eC2318f3dCF7e`
 
-To see all available markets, check the [Aave Address Book](https://github.com/bgd-labs/aave-address-book) for Base Sepolia.
+For other asset addresses, check the [Aave Address Book](https://github.com/bgd-labs/aave-address-book) for Base Sepolia.
 
 ## How It Works
 
@@ -103,7 +96,7 @@ The Vincent ability validates that:
 
 ## Troubleshooting
 
-1. **"Asset not found in available markets"**: The asset symbol isn't recognized. Use the full contract address instead.
+1. **"Asset not found in available markets"**: Make sure you're using the full contract address (e.g., `0x4200000000000000000000000000000000000006` for WETH).
 
 2. **"Insufficient collateral"**: When borrowing, ensure you have enough collateral supplied. Aave requires overcollateralization.
 
@@ -118,4 +111,4 @@ The Vincent ability validates that:
 - All operations use the configuration from your `.env` file
 - Gas is sponsored through ZeroDev's paymaster
 - Interest rates for borrowing are variable by default (can be modified in the code)
-- The scripts handle decimal conversions automatically (6 decimals for USDC, 18 for most other tokens)
+- The scripts automatically fetch token decimals from the contract (no hardcoding)
