@@ -10,7 +10,7 @@ import {
   publicClient,
   transport,
   zerodevPaymaster,
-} from './environment';
+} from '../environment';
 
 export interface SetupZeroDevAccountParams {
   ownerAccount: PrivateKeyAccount;

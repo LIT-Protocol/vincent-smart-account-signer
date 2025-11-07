@@ -1,14 +1,14 @@
 import { deserializePermissionAccount } from '@zerodev/permissions';
 import { toECDSASigner } from '@zerodev/permissions/signers';
 import { createKernelAccountClient, addressToEmptyAccount } from '@zerodev/sdk';
-import { Address } from 'viem';
+import { Address, parseUnits, formatUnits } from 'viem';
 
 import {
   getAaveApprovalTx,
   getAaveSupplyTx,
   getAaveWithdrawTx,
   getAvailableMarkets,
-} from './aave';
+} from '../aave';
 import {
   aaveUsdcProviderWalletClient,
   chain,
@@ -17,20 +17,20 @@ import {
   transport,
   publicClient,
   zerodevPaymaster,
-} from './environment';
+} from '../environment';
 import { getErc20ReadContract, getErc20WriteContract } from './erc20';
 
-export interface GenerateUserOperationParams {
+export interface GenerateTransactionsParams {
   accountAddress: Address;
   permittedAddress: Address;
   serializedPermissionAccount: string;
 }
 
-export async function generateUserOperation({
+export async function generateTransactions({
   accountAddress,
   permittedAddress,
   serializedPermissionAccount,
-}: GenerateUserOperationParams) {
+}: GenerateTransactionsParams) {
   const vincentEmptyAccount = addressToEmptyAccount(permittedAddress);
   const vincentAbilitySigner = await toECDSASigner({
     signer: vincentEmptyAccount,
@@ -61,35 +61,58 @@ export async function generateUserOperation({
     throw new Error(`USDC not found in Aave markets for chain ${chain.id}`);
   }
 
+  const usdcContract = getErc20ReadContract(usdcAddress);
+  let accountUsdcBalance: bigint = (await usdcContract.read.balanceOf([
+    accountAddress,
+  ])) as bigint;
+
+  const fundedUsdcBalance = parseUnits('10', 6);
   if (!aaveUsdcProviderWalletClient) {
-    console.log(`No Aave USDC provider found. Only approve tx will be bundled`);
-  } else {
+    console.log(
+      `No Aave USDC provider found.  We will skip funding the account.`
+    );
+  } else if (accountUsdcBalance < fundedUsdcBalance) {
+    console.log(
+      `Funding account with 10 more USDC.  Account has ${formatUnits(accountUsdcBalance, 6)} USDC.`
+    );
     const providerAddress = aaveUsdcProviderWalletClient.account.address;
 
-    const usdcWriteContract = getErc20WriteContract(usdcAddress, aaveUsdcProviderWalletClient);
-    const providerUsdcBalance = (await usdcWriteContract.read.balanceOf([providerAddress])) as bigint;
+    const usdcWriteContract = getErc20WriteContract(
+      usdcAddress,
+      aaveUsdcProviderWalletClient
+    );
+    const providerUsdcBalance = (await usdcWriteContract.read.balanceOf([
+      providerAddress,
+    ])) as bigint;
     if (providerUsdcBalance <= BigInt(0)) {
-      throw new Error(`Wallet ${providerAddress} does not have any USDC to fund the ${accountAddress} account`);
+      throw new Error(
+        `Wallet ${providerAddress} does not have any USDC (token address: ${usdcAddress}) to fund the ${accountAddress} account`
+      );
     }
 
-    const fundedUsdcBalance = Math.max(Math.floor(Math.random() * 1_000_000), Number(providerUsdcBalance)); // <1 USDC
-    const fundingTx = await usdcWriteContract.write.transfer(
-      [
-        accountAddress,
-        fundedUsdcBalance,
-      ],
-    );
+    // fund with 10 USDC.  USDC has 6 decimals.
+    if (fundedUsdcBalance > providerUsdcBalance) {
+      throw new Error(
+        `Wallet ${providerAddress} does not have enough USDC (token address: ${usdcAddress}) to fund the ${accountAddress} account.  You need to fund the wallet with 10 USDC.`
+      );
+    }
+    const fundingTx = await usdcWriteContract.write.transfer([
+      accountAddress,
+      fundedUsdcBalance,
+    ]);
 
     await publicClient.waitForTransactionReceipt({
       confirmations: 2,
       hash: fundingTx,
     });
 
-    console.log(`Funded ${accountAddress} account with ${fundedUsdcBalance} USDC base units`);
+    console.log(
+      `Funded ${accountAddress} account with ${fundedUsdcBalance} USDC base units`
+    );
   }
 
-  const usdcContract = getErc20ReadContract(usdcAddress);
-  const accountUsdcBalance = (await usdcContract.read.balanceOf([
+  // Get the updated balance of the account after funding
+  accountUsdcBalance = (await usdcContract.read.balanceOf([
     accountAddress,
   ])) as bigint;
 
@@ -129,10 +152,5 @@ export async function generateUserOperation({
     aaveTransactions.push(aaveWithdrawTx);
   }
 
-  const callData = await permissionKernelAccount.encodeCalls(
-    aaveTransactions.map((tx) => ({ data: tx.data, to: tx.to }))
-  );
-  return await permissionKernelClient.prepareUserOperation({
-    callData,
-  });
+  return aaveTransactions;
 }

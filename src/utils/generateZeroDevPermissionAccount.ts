@@ -11,7 +11,7 @@ import {
 } from '@zerodev/sdk';
 import { Address } from 'viem';
 
-import { kernelVersion, entryPoint, publicClient } from './environment';
+import { kernelVersion, entryPoint, publicClient } from '../environment';
 
 export interface GenerateZeroDevSessionKeyParams {
   permittedAddress: Address;

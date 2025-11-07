@@ -29,7 +29,7 @@ import {
   litRelayApiKey,
   pkpEthAddress,
   yellowstoneProvider,
-} from './environment';
+} from '../environment';
 
 type SerializedBigNumber = {
   hex: string;
@@ -52,9 +52,6 @@ async function addPayee(ethAddress: string): Promise<void> {
     );
     return;
   }
-
-  // Removed logging of sensitive credentials for security reasons.
-  // Removed logging of sensitive credentials for security reasons.
 
   try {
     const headers = {

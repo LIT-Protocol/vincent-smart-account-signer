@@ -1,6 +1,6 @@
 import { getContract, type Abi, type Address, type WalletClient } from 'viem';
 
-import { publicClient } from './environment';
+import { publicClient } from '../environment';
 
 /**
  * ERC20 Token ABI - Essential methods only
@@ -65,3 +65,14 @@ export const getErc20WriteContract = (address: Address, walletClient: WalletClie
     abi: ERC20_ABI,
     client: { public: publicClient, wallet: walletClient },
   });
+
+/**
+ * Get the number of decimals for an ERC20 token
+ * @param tokenAddress The address of the ERC20 token
+ * @returns The number of decimals for the token
+ */
+export async function getERC20Decimals(tokenAddress: Address): Promise<number> {
+  const contract = getErc20ReadContract(tokenAddress);
+  const decimals = await contract.read.decimals();
+  return decimals;
+}

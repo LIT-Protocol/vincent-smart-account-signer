@@ -19,35 +19,136 @@ import {
 } from '@bgd-labs/aave-address-book';
 import { encodeFunctionData, type Abi, type Address, type Hex } from 'viem';
 
-import { ERC20_ABI } from './erc20';
+import { ERC20_ABI } from './utils/erc20';
 
 /**
  * AAVE v3 Pool Contract ABI - Essential methods only
  */
 export const AAVE_POOL_ABI: Abi = [
   {
-    inputs: [
-      { internalType: 'address', name: 'asset', type: 'address' },
-      { internalType: 'uint256', name: 'amount', type: 'uint256' },
-      { internalType: 'address', name: 'onBehalfOf', type: 'address' },
-      { internalType: 'uint16', name: 'referralCode', type: 'uint16' },
-    ],
-    name: 'supply',
-    outputs: [],
-    stateMutability: 'nonpayable',
-    type: 'function',
+      "inputs": [
+          {
+              "internalType": "address",
+              "name": "asset",
+              "type": "address"
+          },
+          {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+          },
+          {
+              "internalType": "address",
+              "name": "onBehalfOf",
+              "type": "address"
+          },
+          {
+              "internalType": "uint16",
+              "name": "referralCode",
+              "type": "uint16"
+          }
+      ],
+      "name": "supply",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
   },
   {
-    inputs: [
-      { internalType: 'address', name: 'asset', type: 'address' },
-      { internalType: 'uint256', name: 'amount', type: 'uint256' },
-      { internalType: 'address', name: 'to', type: 'address' },
-    ],
-    name: 'withdraw',
-    outputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
-    stateMutability: 'nonpayable',
-    type: 'function',
+      "inputs": [
+          {
+              "internalType": "address",
+              "name": "asset",
+              "type": "address"
+          },
+          {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+          },
+          {
+              "internalType": "address",
+              "name": "to",
+              "type": "address"
+          }
+      ],
+      "name": "withdraw",
+      "outputs": [
+          {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+          }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
   },
+  {
+      "inputs": [
+          {
+              "internalType": "address",
+              "name": "asset",
+              "type": "address"
+          },
+          {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+          },
+          {
+              "internalType": "uint256",
+              "name": "interestRateMode",
+              "type": "uint256"
+          },
+          {
+              "internalType": "uint16",
+              "name": "referralCode",
+              "type": "uint16"
+          },
+          {
+              "internalType": "address",
+              "name": "onBehalfOf",
+              "type": "address"
+          }
+      ],
+      "name": "borrow",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+  },
+  {
+      "inputs": [
+          {
+              "internalType": "address",
+              "name": "asset",
+              "type": "address"
+          },
+          {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+          },
+          {
+              "internalType": "uint256",
+              "name": "interestRateMode",
+              "type": "uint256"
+          },
+          {
+              "internalType": "address",
+              "name": "onBehalfOf",
+              "type": "address"
+          }
+      ],
+      "name": "repay",
+      "outputs": [
+          {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+          }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+  }
 ] as const;
 
 /**
@@ -139,7 +240,7 @@ export function getAvailableMarkets(chainId: number): Record<string, Address> {
   );
 }
 
-interface Transaction {
+export interface Transaction {
   data: Hex;
   from: Address;
   to: Address;
@@ -273,4 +374,110 @@ export async function getAaveWithdrawTx({
   const { POOL } = getAaveAddresses(chainId);
 
   return await buildWithdrawTx(accountAddress, assetAddress, POOL, amount, to);
+}
+
+export interface AaveBorrowTxParams {
+  accountAddress: Address;
+  amount: string;
+  assetAddress: Address;
+  chainId: number;
+  interestRateMode?: number;
+  onBehalfOf?: Address;
+  referralCode?: number;
+}
+
+async function buildBorrowTx(
+  accountAddress: Address,
+  assetAddress: Address,
+  poolAddress: Address,
+  amount: string,
+  interestRateMode: number = 2, // 2 for variable rate, 1 for stable
+  onBehalfOf: Address = accountAddress,
+  referralCode: number = 0
+): Promise<Transaction> {
+  const borrowData = encodeFunctionData({
+    abi: AAVE_POOL_ABI,
+    functionName: 'borrow',
+    args: [assetAddress, amount, interestRateMode, referralCode, onBehalfOf],
+  });
+  const borrowTx: Transaction = {
+    data: borrowData,
+    from: accountAddress,
+    to: poolAddress,
+  };
+
+  return borrowTx;
+}
+
+export async function getAaveBorrowTx({
+  accountAddress,
+  amount,
+  assetAddress,
+  chainId,
+  interestRateMode,
+  onBehalfOf,
+  referralCode,
+}: AaveBorrowTxParams) {
+  const { POOL } = getAaveAddresses(chainId);
+
+  return await buildBorrowTx(
+    accountAddress,
+    assetAddress,
+    POOL,
+    amount,
+    interestRateMode,
+    onBehalfOf,
+    referralCode
+  );
+}
+
+export interface AaveRepayTxParams {
+  accountAddress: Address;
+  amount: string;
+  assetAddress: Address;
+  chainId: number;
+  interestRateMode?: number;
+  onBehalfOf?: Address;
+}
+
+async function buildRepayTx(
+  accountAddress: Address,
+  assetAddress: Address,
+  poolAddress: Address,
+  amount: string,
+  interestRateMode: number = 2, // 2 for variable rate, 1 for stable
+  onBehalfOf: Address = accountAddress
+): Promise<Transaction> {
+  const repayData = encodeFunctionData({
+    abi: AAVE_POOL_ABI,
+    functionName: 'repay',
+    args: [assetAddress, amount, interestRateMode, onBehalfOf],
+  });
+  const repayTx: Transaction = {
+    data: repayData,
+    from: accountAddress,
+    to: poolAddress,
+  };
+
+  return repayTx;
+}
+
+export async function getAaveRepayTx({
+  accountAddress,
+  amount,
+  assetAddress,
+  chainId,
+  interestRateMode,
+  onBehalfOf,
+}: AaveRepayTxParams) {
+  const { POOL } = getAaveAddresses(chainId);
+
+  return await buildRepayTx(
+    accountAddress,
+    assetAddress,
+    POOL,
+    amount,
+    interestRateMode,
+    onBehalfOf
+  );
 }
