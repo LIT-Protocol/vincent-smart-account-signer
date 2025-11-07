@@ -9,6 +9,7 @@ import { sendPermittedUserOperation } from '../utils/sendPermittedUserOperation'
 import { setupSmartAccountAndDelegation } from '../utils/setupSmartAccountAndDelegation';
 import { transactionsToUserOp } from '../utils/transactionsToUserOp';
 import { serializeUserOpForVincent } from '../utils/serializeUserOpForVincent';
+import { getERC20Decimals } from '../utils/erc20';
 import {
   getAaveApprovalTx,
   getAaveRepayTx,
@@ -49,9 +50,8 @@ async function main() {
   const { ownerKernelAccount, pkpEthAddress, serializedPermissionAccount } =
     await setupSmartAccountAndDelegation();
 
-  // Parse amount based on asset decimals (assuming 6 for USDC, 18 for most others)
-  // In production, you'd want to fetch the actual decimals from the token contract
-  const decimals = argv.asset.toUpperCase() === 'USDC' ? 6 : 18;
+  // Get decimals from the ERC20 contract
+  const decimals = await getERC20Decimals(assetAddress);
   const amount = parseUnits(argv.amount.toString(), decimals);
 
   // Create transactions to be bundled. For repay, we need to approve the asset and then call repay().

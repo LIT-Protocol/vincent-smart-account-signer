@@ -1,5 +1,5 @@
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
-import { Hex, toHex } from 'viem';
+import { Hex } from 'viem';
 
 import {
   abilityClient,
@@ -9,9 +9,6 @@ import {
   vincentAppId,
 } from './environment';
 import { generateTransactions } from './utils/generateTransactions';
-import { generateZeroDevPermissionAccount } from './utils/generateZeroDevPermissionAccount';
-import { setupVincentDelegation } from './utils/setupVincentDelegation';
-import { setupZeroDevAccount } from './utils/setupZeroDevAccount';
 import { sendPermittedUserOperation } from './utils/sendPermittedUserOperation';
 import { transactionsToUserOp } from './utils/transactionsToUserOp';
 import { serializeUserOpForVincent } from './utils/serializeUserOpForVincent';

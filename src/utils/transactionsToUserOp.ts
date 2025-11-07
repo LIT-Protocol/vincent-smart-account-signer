@@ -2,7 +2,6 @@ import { Address } from 'viem';
 import { deserializePermissionAccount } from '@zerodev/permissions';
 import { toECDSASigner } from '@zerodev/permissions/signers';
 import { createKernelAccountClient, addressToEmptyAccount } from '@zerodev/sdk';
-import { toHex } from 'viem';
 
 import {
   chain,
