@@ -53,7 +53,7 @@ This POC involves multiple actors and systems working together:
 
 ### Step 1: Setup ZeroDev Smart Account
 
-**File:** `src/setupZeroDevAccount.ts`
+**File:** `src/utils/setupZeroDevAccount.ts`
 
 - Creates an ECDSA validator using the owner's private key (or generates a random one if not provided)
 - Deploys a Kernel v3.3 smart account on Base Sepolia
@@ -68,7 +68,7 @@ This POC involves multiple actors and systems working together:
 
 ### Step 2: Get or Create Vincent PKP
 
-**File:** `src/setupVincentDelegation.ts`
+**File:** `src/utils/setupVincentDelegation.ts`
 
 This step supports two modes of operation:
 
@@ -94,7 +94,7 @@ This step supports two modes of operation:
 
 ### Step 3: Generate Session Key Permission
 
-**File:** `src/generateZeroDevPermissionAccount.ts`
+**File:** `src/utils/generateZeroDevPermissionAccount.ts`
 
 - Creates an "empty account" for the Vincent PKP address (address without actual signing capability)
 - Wraps this empty account in a permission validator
@@ -111,7 +111,7 @@ The serialized account contains all the cryptographic permissions and policies. 
 
 ### Step 4-5: Generate Aave User Operation
 
-**File:** `src/generateUserOperation.ts`
+**File:** `src/utils/generateTransactions.ts`
 
 The backend service receives the serialized permission account and:
 
@@ -176,7 +176,7 @@ This package contains the bundled Vincent ability code that runs inside Lit Prot
 
 ### Step 8-9: Broadcast Transaction
 
-**File:** `src/sendPermittedUserOperation.ts`
+**File:** `src/utils/sendPermittedUserOperation.ts`
 
 The service receives the signed UserOperation and:
 
@@ -369,10 +369,33 @@ ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
 
 ## Running the Project
 
-Execute the main integration script:
+### Main Integration Demo
+
+Execute the main integration script to run the full flow:
 
 ```bash
 npm run smart-account-integration
+```
+
+This script demonstrates the complete integration flow, including smart account setup, PKP delegation, and executing Aave operations with Vincent ability validation.
+
+### Individual Operations
+
+For testing specific Aave operations in isolation, see the [operations README](src/operations/README.md). These scripts allow you to:
+
+- Supply assets to Aave lending pools
+- Withdraw supplied assets
+- Borrow assets against collateral
+- Repay borrowed assets
+
+Each operation script demonstrates how to execute a single transaction type through the Vincent ability, making it easier to understand and test specific functionality without running the entire integration flow.
+
+Example commands:
+```bash
+npm run operations:supply -- --amount 10        # Supply 10 USDC
+npm run operations:withdraw -- --amount 5       # Withdraw 5 USDC
+npm run operations:borrow -- --amount 0.001 --asset WETH   # Borrow 0.001 WETH
+npm run operations:repay -- --amount 0.001 --asset WETH    # Repay 0.001 WETH
 ```
 
 ### Expected Output
@@ -437,14 +460,25 @@ The session key approach provides:
 ```
 src/
 ├── smartAccountIntegration.ts      # Main orchestration script
-├── setupZeroDevAccount.ts          # Creates and deploys smart account
-├── setupVincentDelegation.ts       # Gets Vincent PKP address
-├── generateZeroDevPermissionAccount.ts  # Creates session key
-├── generateUserOperation.ts        # Builds Aave transaction UserOp
-├── sendPermittedUserOperation.ts   # Broadcasts signed UserOp
 ├── aave.ts                        # Aave protocol addresses and helpers
-├── erc20.ts                       # ERC20 ABI and utilities
-└── environment.ts                 # Configuration and clients
+├── environment.ts                 # Configuration and clients
+├── operations/                    # Individual operation examples (see below)
+│   ├── README.md                  # Guide for running individual operations
+│   ├── supply.ts                  # Supply assets to Aave
+│   ├── withdraw.ts                # Withdraw assets from Aave
+│   ├── borrow.ts                  # Borrow assets from Aave
+│   └── repay.ts                   # Repay borrowed assets
+└── utils/                         # Utility functions
+    ├── setupZeroDevAccount.ts     # Creates and deploys smart account
+    ├── setupVincentDelegation.ts  # Gets Vincent PKP address
+    ├── generateZeroDevPermissionAccount.ts  # Creates session key
+    ├── transactionsToUserOp.ts    # Builds UserOp from transactions
+    ├── sendPermittedUserOperation.ts  # Broadcasts signed UserOp
+    ├── setupSmartAccountAndDelegation.ts  # Combined setup helper
+    ├── serializeUserOpForVincent.ts  # Serializes UserOp for Vincent
+    ├── generateTransactions.ts    # Builds Aave transactions
+    ├── erc20.ts                   # ERC20 ABI and utilities
+    └── types/                     # TypeScript type definitions
 ```
 
 ## Security Considerations
