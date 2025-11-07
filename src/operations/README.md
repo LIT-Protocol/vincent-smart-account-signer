@@ -76,7 +76,7 @@ npm run operations:repay -- --amount 0.001 --asset 0x420000000000000000000000000
 
 Common asset addresses for Base Sepolia:
 - WETH: `0x4200000000000000000000000000000000000006`
-- USDC: `0x036CbD53842c5426634e7929541eC2318f3dCF7e`
+- USDC: `0xba50cd2a20f6da35d788639e581bca8d0b5d4d5f`
 
 For other asset addresses, check the [Aave Address Book](https://github.com/bgd-labs/aave-address-book) for Base Sepolia.
 
