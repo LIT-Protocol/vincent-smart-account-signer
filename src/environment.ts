@@ -1,9 +1,6 @@
 import { LIT_RPC } from '@lit-protocol/constants';
 import { bundledVincentAbility } from '@lit-protocol/vincent-ability-aave-smart-account';
-import {
-  getVincentAbilityClient,
-  type VincentAbilityClient,
-} from '@lit-protocol/vincent-app-sdk/abilityClient';
+import { getVincentAbilityClient } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { createZeroDevPaymasterClient } from '@zerodev/sdk';
 import { KERNEL_V3_3, getEntryPoint } from '@zerodev/sdk/constants';
 import { ethers } from 'ethers';
@@ -98,5 +95,5 @@ const delegateeSigner = new ethers.Wallet(
 export const abilityClient = getVincentAbilityClient({
   bundledVincentAbility,
   ethersSigner: delegateeSigner,
-  debug: false
+  debug: false,
 }) as any;
