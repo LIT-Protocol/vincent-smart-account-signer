@@ -1,12 +1,10 @@
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
-import { Hex } from 'viem';
+import { Hex, concat } from 'viem';
 
 import {
   abilityClient,
   alchemyRpc,
   entryPoint,
-  ownerAccount,
-  vincentAppId,
 } from './environment';
 import { generateTransactions } from './utils/generateTransactions';
 import { sendPermittedUserOperation } from './utils/sendPermittedUserOperation';
@@ -22,15 +20,12 @@ async function main() {
   // CLIENT (APP BACKEND)
   const transactions = await generateTransactions({
     accountAddress: ownerKernelAccount.address,
-    permittedAddress: pkpEthAddress,
-    serializedPermissionAccount,
   });
 
   const aaveUserOp = await transactionsToUserOp({
     transactions,
-    accountAddress: ownerKernelAccount.address,
-    permittedAddress: pkpEthAddress,
     serializedPermissionAccount,
+    permittedAddress: pkpEthAddress,
   });
 
   console.log(
@@ -66,7 +61,7 @@ async function main() {
   // User op returns signed
   const signedAaveUserOp = {
     ...aaveUserOp,
-    signature: executeResult.result.userOp.signature as Hex,
+    signature: concat(['0xff', executeResult.result.signature as Hex]),
   };
 
   // CLIENT (APP BACKEND)

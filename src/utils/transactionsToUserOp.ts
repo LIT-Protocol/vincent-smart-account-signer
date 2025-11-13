@@ -1,7 +1,7 @@
-import { Address } from 'viem';
 import { deserializePermissionAccount } from '@zerodev/permissions';
 import { toECDSASigner } from '@zerodev/permissions/signers';
 import { createKernelAccountClient, addressToEmptyAccount } from '@zerodev/sdk';
+import { type Address } from 'viem';
 
 import {
   chain,
@@ -14,16 +14,14 @@ import {
 import { Transaction } from '../aave';
 
 export interface TransactionsToUserOpParams {
-  transactions: Transaction[];
-  accountAddress: Address;
   permittedAddress: Address;
   serializedPermissionAccount: string;
+  transactions: Transaction[];
 }
 export async function transactionsToUserOp({
-  transactions,
-  accountAddress,
   permittedAddress,
   serializedPermissionAccount,
+  transactions,
 }: TransactionsToUserOpParams) {
   const vincentEmptyAccount = addressToEmptyAccount(permittedAddress);
   const vincentAbilitySigner = await toECDSASigner({

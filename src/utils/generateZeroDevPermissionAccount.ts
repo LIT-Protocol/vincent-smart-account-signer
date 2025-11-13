@@ -1,50 +1,36 @@
-import {
-  serializePermissionAccount,
-  toPermissionValidator,
-} from '@zerodev/permissions';
-import { toSudoPolicy } from '@zerodev/permissions/policies';
-import { toECDSASigner } from '@zerodev/permissions/signers';
-import {
-  createKernelAccount,
-  addressToEmptyAccount,
-  KernelValidator,
-} from '@zerodev/sdk';
+import { serializePermissionAccount } from '@zerodev/permissions';
+import { createKernelAccount, KernelValidator } from '@zerodev/sdk';
 import { Address } from 'viem';
 
 import { kernelVersion, entryPoint, publicClient } from '../environment';
+import { getPermissionEmptyValidator } from './getPermissionEmptyValidator';
 
 export interface GenerateZeroDevSessionKeyParams {
-  permittedAddress: Address;
+  accountAddress: Address;
   ownerValidator: KernelValidator;
+  permittedAddress: Address;
 }
 
 export async function generateZeroDevPermissionAccount({
-  permittedAddress,
+  accountAddress,
   ownerValidator,
+  permittedAddress,
 }: GenerateZeroDevSessionKeyParams) {
-  const sessionEmptyAccount = addressToEmptyAccount(permittedAddress);
-  const sessionEmptySigner = await toECDSASigner({
-    signer: sessionEmptyAccount,
-  });
-  const permissionValidator = await toPermissionValidator(publicClient, {
-    entryPoint,
-    kernelVersion,
-    signer: sessionEmptySigner,
-    policies: [
-      // TODO you probably want to restrict this
-      toSudoPolicy({}),
-    ],
-  });
+  const permissionValidator =
+    await getPermissionEmptyValidator(permittedAddress);
+
   const permissionKernelAccountToSerialize = await createKernelAccount(
     publicClient,
     {
       entryPoint,
       kernelVersion,
+      address: accountAddress,
       plugins: {
         sudo: ownerValidator,
         regular: permissionValidator,
       },
     }
   );
+
   return await serializePermissionAccount(permissionKernelAccountToSerialize);
 }

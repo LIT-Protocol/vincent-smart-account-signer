@@ -8,11 +8,11 @@ export function serializeUserOpForVincent(aaveUserOp: UserOperation) {
     maxPriorityFeePerGas: toHex(aaveUserOp.maxPriorityFeePerGas),
     nonce: toHex(aaveUserOp.nonce),
     callGasLimit: toHex(aaveUserOp.callGasLimit),
-    verificationGasLimit: toHex(aaveUserOp.verificationGasLimit),
-    preVerificationGas: toHex(aaveUserOp.preVerificationGas),
     paymasterVerificationGasLimit: toHex(
       aaveUserOp.paymasterVerificationGasLimit
     ),
     paymasterPostOpGasLimit: toHex(aaveUserOp.paymasterPostOpGasLimit),
+    preVerificationGas: toHex(aaveUserOp.preVerificationGas),
+    verificationGasLimit: toHex(aaveUserOp.verificationGasLimit),
   };
 }
