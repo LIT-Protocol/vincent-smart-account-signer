@@ -30,4 +30,6 @@ export async function sendPermittedCrossmintUserOperation({
   if ('error' in userOpAppoval) {
     throw new Error(`Could not sign crossmint user operation. Error: ${JSON.stringify(userOpAppoval.error)}`);
   }
+
+  console.log('UserOp hash:', userOpAppoval.onChain.userOperationHash);
 }
