@@ -4,14 +4,12 @@ import { createKernelAccount, createKernelAccountClient } from '@zerodev/sdk';
 import { type Address, zeroAddress } from 'viem';
 import { PrivateKeyAccount } from 'viem/accounts';
 
+import { chain, publicClient, transport } from '../environment/base';
 import {
-  chain,
   entryPoint,
   kernelVersion,
-  publicClient,
-  transport,
   zerodevPaymaster,
-} from '../environment';
+} from '../environment/zerodev';
 import { getPermissionEmptyValidator } from './getPermissionEmptyValidator';
 
 export interface SetupZeroDevAccountParams {
@@ -44,8 +42,9 @@ export async function setupZeroDevAccount({
     initConfig: await toInitConfig(permissionValidator),
   });
 
-  const accountAddress = ownerKernelAccount.address;
-  console.log(`ZeroDev Kernel Smart Account address: ${accountAddress}`);
+  console.log(
+    `ZeroDev Kernel Smart Account address: ${ownerKernelAccount.address}`
+  );
 
   const ownerKernelClient = createKernelAccountClient({
     chain,

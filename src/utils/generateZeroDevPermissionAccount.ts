@@ -2,7 +2,8 @@ import { serializePermissionAccount } from '@zerodev/permissions';
 import { createKernelAccount, KernelValidator } from '@zerodev/sdk';
 import { Address } from 'viem';
 
-import { kernelVersion, entryPoint, publicClient } from '../environment';
+import { publicClient } from '../environment/base';
+import { kernelVersion, entryPoint } from '../environment/zerodev';
 import { getPermissionEmptyValidator } from './getPermissionEmptyValidator';
 
 export interface GenerateZeroDevSessionKeyParams {

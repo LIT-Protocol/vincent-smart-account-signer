@@ -1,9 +1,10 @@
-import { ownerAccount, vincentAppId } from '../environment';
+import { ownerAccount } from '../environment/base';
+import { vincentAppId } from '../environment/lit';
 import { setupZeroDevAccount } from './setupZeroDevAccount';
 import { setupVincentDelegation } from './setupVincentDelegation';
 import { generateZeroDevPermissionAccount } from './generateZeroDevPermissionAccount';
 
-export async function setupSmartAccountAndDelegation() {
+export async function setupZeroDevSmartAccountAndDelegation() {
   // Get pkp to delegate signatures
   const pkpEthAddress = await setupVincentDelegation({
     ownerAccount,

@@ -12,7 +12,6 @@ import { PKPEthersWallet } from '@lit-protocol/pkp-ethers';
 import {
   AuthMethod,
   IRelayPKP,
-  IRelayPollStatusResponse,
   LIT_NETWORKS_KEYS,
 } from '@lit-protocol/types';
 import {
@@ -29,7 +28,7 @@ import {
   litRelayApiKey,
   pkpEthAddress,
   yellowstoneProvider,
-} from '../environment';
+} from '../environment/lit';
 
 type SerializedBigNumber = {
   hex: string;

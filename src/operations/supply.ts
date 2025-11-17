@@ -1,19 +1,21 @@
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { Hex, parseUnits } from 'viem';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - yargs types exist but TypeScript has trouble resolving them with bundler moduleResolution
+// @ts-ignore - yargs types exist, but TypeScript has trouble resolving them with bundler moduleResolution
 import yargs from 'yargs';
 
-import { chain, alchemyRpc, entryPoint, abilityClient } from '../environment';
-import { sendPermittedUserOperation } from '../utils/sendPermittedUserOperation';
-import { setupSmartAccountAndDelegation } from '../utils/setupSmartAccountAndDelegation';
-import { transactionsToUserOp } from '../utils/transactionsToUserOp';
-import { serializeUserOpForVincent } from '../utils/serializeUserOpForVincent';
 import {
   getAaveApprovalTx,
   getAaveSupplyTx,
   getAvailableMarkets,
 } from '../aave';
+import { chain, alchemyRpc } from '../environment/base';
+import { abilityClient } from '../environment/lit';
+import { entryPoint } from '../environment/zerodev';
+import { sendPermittedKernelUserOperation } from '../utils/sendPermittedKernelUserOperation';
+import { setupZeroDevSmartAccountAndDelegation } from '../utils/setupZeroDevSmartAccountAndDelegation';
+import { transactionsToKernelUserOp } from '../utils/transactionsToKernelUserOp';
+import { userOp } from '../utils/userOp';
 
 async function main() {
   const argv = yargs(process.argv)
@@ -30,7 +32,7 @@ async function main() {
 
   // user setup and delegation
   const { ownerKernelAccount, pkpEthAddress, serializedPermissionAccount } =
-    await setupSmartAccountAndDelegation();
+    await setupZeroDevSmartAccountAndDelegation();
 
   const amount = parseUnits(argv.amount.toString(), 6);
 
@@ -54,11 +56,10 @@ async function main() {
   aaveTransactions.push(aaveSupplyTx);
 
   // convert the transactions array to a proper zerodev user op
-  const aaveUserOp = await transactionsToUserOp({
-    transactions: aaveTransactions,
-    accountAddress: ownerKernelAccount.address,
-    permittedAddress: pkpEthAddress,
+  const aaveUserOp = await transactionsToKernelUserOp({
     serializedPermissionAccount,
+    permittedAddress: pkpEthAddress,
+    transactions: aaveTransactions,
   });
 
   // send the user op to the lit signer.  this is the vincent aave smart account ability.
@@ -70,7 +71,7 @@ async function main() {
     alchemyRpcUrl: alchemyRpc,
     entryPointAddress: entryPoint.address,
     serializedZeroDevPermissionAccount: serializedPermissionAccount,
-    userOp: serializeUserOpForVincent(aaveUserOp),
+    userOp: userOp(aaveUserOp),
   };
   const vincentDelegationContext = {
     delegatorPkpEthAddress: pkpEthAddress,
@@ -101,7 +102,7 @@ async function main() {
   };
 
   // Send user operation
-  await sendPermittedUserOperation({
+  await sendPermittedKernelUserOperation({
     permittedAddress: pkpEthAddress,
     serializedPermissionAccount,
     signedUserOp: signedAaveUserOp,

@@ -1,28 +1,26 @@
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { Hex, concat } from 'viem';
 
-import {
-  abilityClient,
-  alchemyRpc,
-  entryPoint,
-} from './environment';
+import { alchemyRpc } from './environment/base';
+import { abilityClient } from './environment/lit';
+import { entryPoint } from './environment/zerodev';
 import { generateTransactions } from './utils/generateTransactions';
-import { sendPermittedUserOperation } from './utils/sendPermittedUserOperation';
-import { transactionsToUserOp } from './utils/transactionsToUserOp';
-import { serializeUserOpForVincent } from './utils/serializeUserOpForVincent';
-import { setupSmartAccountAndDelegation } from './utils/setupSmartAccountAndDelegation';
+import { sendPermittedKernelUserOperation } from './utils/sendPermittedKernelUserOperation';
+import { setupZeroDevSmartAccountAndDelegation } from './utils/setupZeroDevSmartAccountAndDelegation';
+import { transactionsToKernelUserOp } from './utils/transactionsToKernelUserOp';
+import { userOp } from './utils/userOp';
 
 async function main() {
   // USER
   const { ownerKernelAccount, pkpEthAddress, serializedPermissionAccount } =
-    await setupSmartAccountAndDelegation();
+    await setupZeroDevSmartAccountAndDelegation();
 
   // CLIENT (APP BACKEND)
   const transactions = await generateTransactions({
     accountAddress: ownerKernelAccount.address,
   });
 
-  const aaveUserOp = await transactionsToUserOp({
+  const aaveUserOp = await transactionsToKernelUserOp({
     transactions,
     serializedPermissionAccount,
     permittedAddress: pkpEthAddress,
@@ -35,8 +33,7 @@ async function main() {
   const vincentAbilityParams = {
     alchemyRpcUrl: alchemyRpc,
     entryPointAddress: entryPoint.address,
-    serializedZeroDevPermissionAccount: serializedPermissionAccount,
-    userOp: serializeUserOpForVincent(aaveUserOp),
+    userOp: userOp(aaveUserOp),
   };
   const vincentDelegationContext = {
     delegatorPkpEthAddress: pkpEthAddress,
@@ -66,7 +63,7 @@ async function main() {
 
   // CLIENT (APP BACKEND)
   // Send user operation
-  await sendPermittedUserOperation({
+  await sendPermittedKernelUserOperation({
     permittedAddress: pkpEthAddress,
     serializedPermissionAccount,
     signedUserOp: signedAaveUserOp,

@@ -2,13 +2,13 @@
 
 ## Overview
 
-This project demonstrates a proof-of-concept integration between **ERC-4337 Smart Accounts**, particularly ZeroDev smart
-accounts, and **Lit Protocol's Vincent abilities** for secure, scoped delegated signing. It showcases how users can
-delegate signing authority to a Vincent ability with strict validation, ensuring that operations are only executed when
-they meet specific safety criteria.
+This project demonstrates a proof-of-concept integration between **ERC-4337 Smart Accounts** and **Lit Protocol's Vincent abilities** for secure, scoped delegated signing. It showcases how users can delegate signing authority to a Vincent ability with strict validation, ensuring that operations are only executed when they meet specific safety criteria.
 
-The demo specifically focuses on **Aave protocol interactions**, where a Vincent ability validates that all operations
-benefit the user and interact only with authorized Aave contracts before signing.
+The demo supports two smart account providers:
+- **ZeroDev** (Kernel-based smart accounts)
+- **Crossmint** (Crossmint-based smart accounts)
+
+The demo specifically focuses on **Aave protocol interactions**, where a Vincent ability validates that all operations benefit the user and interact only with authorized Aave contracts before signing. This implementation demonstrates how Vincent can work with multiple smart account providers, providing flexibility in choosing the infrastructure that best fits your use case.
 
 ## Architecture
 
@@ -18,12 +18,12 @@ This POC involves multiple actors and systems working together:
 ┌─────────────────────────────────────────────────────────────────────┐
 │                              USER SIDE                              │
 ├─────────────────────────────────────────────────────────────────────┤
-│ 1. Create ZeroDev Smart Account                                     │
+│ 1. Create Smart Account (ZeroDev/Kernel OR Crossmint)              │
 │ 2. Setup Vincent Agent PKP for delegated signing to a specific      │
 │    Vincent app and its abilities (Aave smart account ability)       │
 │ 3. Add Vincent PKP as authorized signer in smart account            │
 └────────────────────────┬────────────────────────────────────────────┘
-                         │ Serialized Session
+                         │ Account Context / Session Data
                          ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                       SERVICE/BACKEND SIDE                          │
@@ -55,9 +55,15 @@ This POC involves multiple actors and systems working together:
 
 ## Flow Breakdown
 
-### Step 1: Setup ZeroDev Smart Account
+The flow below works with both **ZeroDev (Kernel)** and **Crossmint** smart accounts. Choose the provider that best fits your use case.
 
-**File:** `src/utils/setupZeroDevAccount.ts`
+### Step 1: Setup Smart Account
+
+#### Option A: ZeroDev (Kernel) Smart Account
+
+**Files:**
+- `src/utils/setupZeroDevAccount.ts`
+- `src/kernelSmartAccountIntegration.ts`
 
 - Creates an ECDSA validator using the owner's private key (or generates a random one if not provided)
 - Deploys a Kernel v3.3 smart account on Base Sepolia
@@ -65,9 +71,23 @@ This POC involves multiple actors and systems working together:
 - Returns the account address and validator for later use
 
 **Key outputs:**
-
 - `ownerKernelAccount`: The deployed smart account
 - `ownerValidator`: Validator that proves ownership
+- `accountAddress`: The on-chain address of the smart account
+
+#### Option B: Crossmint Smart Account
+
+**Files:**
+- `src/utils/setupCrossmintAccount.ts`
+- `src/crossmintSmartAccountIntegration.ts`
+
+- Creates a Crossmint wallet using the Crossmint SDK
+- Initializes the wallet with the owner's credentials
+- Returns the wallet instance for transaction signing
+- Leverages Crossmint's infrastructure for account abstraction
+
+**Key outputs:**
+- `wallet`: The Crossmint wallet instance
 - `accountAddress`: The on-chain address of the smart account
 
 ### Step 2: Get or Create Vincent PKP
@@ -202,7 +222,9 @@ The service receives the signed UserOperation and:
 
 - Node.js (v18 or higher recommended)
 - npm or yarn
-- A ZeroDev project (for bundler and paymaster)
+- **Smart Account Provider** (choose one or both):
+  - **ZeroDev**: A ZeroDev project (for Kernel accounts, bundler and paymaster)
+  - **Crossmint**: A Crossmint API key (for Crossmint smart accounts)
 - An Alchemy account (for RPC access)
 - A Vincent App with the Aave smart account ability configured
 - Private key for delegatee account of that app (used to interact with Lit Protocol)
@@ -312,10 +334,14 @@ PKP_ETH_ADDRESS=0x...
 LIT_RELAY_API_KEY=
 LIT_PAYER_SECRET_KEY=
 
+# === Smart Account Provider Configuration ===
+# Crossmint API Key (required for Crossmint integration)
+CROSSMINT_API_KEY=
+
 # Alchemy RPC URL for Base Sepolia
 ALCHEMY_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_API_KEY
 
-# ZeroDev bundler RPC URL
+# ZeroDev bundler RPC URL (required for ZeroDev/Kernel integration)
 ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
 ```
 
@@ -367,15 +393,24 @@ ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
         - Delegate the app to the agent PKP
         - Return the agent PKP address
 
-6. **ALCHEMY_RPC_URL**:
+6. **Smart Account Provider Setup** - Configure based on your chosen provider(s):
+
+   **For ZeroDev (Kernel) Integration:**
+    - **ZERODEV_RPC_URL**:
+      - Sign up at [ZeroDev](https://zerodev.app)
+      - Create a new project
+      - Copy the bundler RPC URL
+
+   **For Crossmint Integration:**
+    - **CROSSMINT_API_KEY**:
+      - Sign up at [Crossmint](https://www.crossmint.com/)
+      - Navigate to the API section in your dashboard
+      - Generate an API key for your project
+
+7. **ALCHEMY_RPC_URL** (Required for both providers):
     - Sign up at [Alchemy](https://www.alchemy.com)
     - Create a new app for Base Sepolia
     - Copy the HTTPS endpoint
-
-7. **ZERODEV_RPC_URL**:
-    - Sign up at [ZeroDev](https://zerodev.app)
-    - Create a new project
-    - Copy the bundler RPC URL
 
 ## Running the Project
 
@@ -442,10 +477,18 @@ UserOp hash: 0x...
 
 ### Smart Account Stack
 
+This project supports two smart account providers:
+
+#### ZeroDev (Kernel) Stack
 - **ZeroDev SDK** (`@zerodev/sdk`): Provides Kernel account implementation (ERC-4337 compatible)
 - **ZeroDev Permissions** (`@zerodev/permissions`): Enables session keys and policy-based access control
 - **Kernel Version**: v3.3
 - **EntryPoint**: v0.7 (latest ERC-4337 standard)
+
+#### Crossmint Stack
+- **Crossmint Wallets SDK** (`@crossmint/wallets-sdk`): Provides Crossmint wallet implementation
+- **Account Abstraction**: Crossmint-managed smart wallet infrastructure
+- **Integrated Services**: Built-in support for custodial and non-custodial wallet experiences
 
 ### Lit Protocol Integration
 
@@ -476,26 +519,34 @@ The session key approach provides:
 
 ```
 src/
-├── smartAccountIntegration.ts      # Main orchestration script
-├── aave.ts                        # Aave protocol addresses and helpers
-├── environment.ts                 # Configuration and clients
-├── operations/                    # Individual operation examples (see below)
-│   ├── README.md                  # Guide for running individual operations
-│   ├── supply.ts                  # Supply assets to Aave
-│   ├── withdraw.ts                # Withdraw assets from Aave
-│   ├── borrow.ts                  # Borrow assets from Aave
-│   └── repay.ts                   # Repay borrowed assets
-└── utils/                         # Utility functions
-    ├── setupZeroDevAccount.ts     # Creates and deploys smart account
-    ├── setupVincentDelegation.ts  # Gets Vincent PKP address
-    ├── generateZeroDevPermissionAccount.ts  # Creates session key
-    ├── transactionsToUserOp.ts    # Builds UserOp from transactions
-    ├── sendPermittedUserOperation.ts  # Broadcasts signed UserOp
-    ├── setupSmartAccountAndDelegation.ts  # Combined setup helper
-    ├── serializeUserOpForVincent.ts  # Serializes UserOp for Vincent
-    ├── generateTransactions.ts    # Builds Aave transactions
-    ├── erc20.ts                   # ERC20 ABI and utilities
-    └── types/                     # TypeScript type definitions
+├── crossmintSmartAccountIntegration.ts   # Crossmint integration example
+├── kernelSmartAccountIntegration.ts      # ZeroDev Kernel integration example
+├── environment/                          # Environment configuration modules
+│   ├── base.ts                          # Base configuration
+│   ├── crossmint.ts                     # Crossmint-specific config
+│   ├── lit.ts                           # Lit Protocol config
+│   └── zerodev.ts                       # ZeroDev config
+├── operations/                          # Individual operation examples
+│   ├── README.md                        # Guide for running individual operations
+│   ├── supply.ts                        # Supply assets to Aave
+│   ├── withdraw.ts                      # Withdraw assets from Aave
+│   ├── borrow.ts                        # Borrow assets from Aave
+│   └── repay.ts                         # Repay borrowed assets
+└── utils/                               # Utility functions
+    ├── setupZeroDevAccount.ts           # Creates and deploys Kernel smart account
+    ├── setupCrossmintAccount.ts         # Creates Crossmint smart wallet
+    ├── setupVincentDelegation.ts        # Gets Vincent PKP address
+    ├── setupZeroDevSmartAccountAndDelegation.ts   # ZeroDev combined setup
+    ├── setupCrossmintSmartAccountAndDelegation.ts # Crossmint combined setup
+    ├── generateZeroDevPermissionAccount.ts        # Creates session key for Kernel
+    ├── transactionsToKernelUserOp.ts    # Builds UserOp for Kernel accounts
+    ├── transactionsToCrossmintUserOp.ts # Builds UserOp for Crossmint accounts
+    ├── sendPermittedKernelUserOperation.ts        # Broadcasts signed Kernel UserOp
+    ├── sendPermittedCrossmintUserOperation.ts     # Broadcasts signed Crossmint UserOp
+    ├── generateTransactions.ts          # Builds Aave transactions
+    ├── erc20.ts                         # ERC20 ABI and utilities
+    ├── userOp.ts                        # UserOp serialization utilities
+    └── types/                           # TypeScript type definitions
 ```
 
 ## Security Considerations
@@ -591,6 +642,7 @@ To build on this POC:
 ## Resources
 
 - [ZeroDev Documentation](https://docs.zerodev.app/)
+- [Crossmint Documentation](https://docs.crossmint.com/)
 - [Lit Protocol Documentation](https://developer.litprotocol.com/)
 - [Vincent Abilities Guide](https://developer.litprotocol.com/vincent)
 - [ERC-4337 Specification](https://eips.ethereum.org/EIPS/eip-4337)

@@ -4,7 +4,8 @@ import { toECDSASigner } from '@zerodev/permissions/signers';
 import { addressToEmptyAccount } from '@zerodev/sdk';
 import { type Address } from 'viem';
 
-import { entryPoint, kernelVersion, publicClient } from '../environment';
+import { publicClient } from '../environment/base';
+import { entryPoint, kernelVersion } from '../environment/zerodev';
 
 export async function getPermissionEmptyValidator(permittedAddress: Address) {
   const permittedEmptyAccount = addressToEmptyAccount(permittedAddress);

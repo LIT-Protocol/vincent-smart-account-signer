@@ -10,7 +10,7 @@ import {
   aaveUsdcProviderWalletClient,
   chain,
   publicClient,
-} from '../environment';
+} from '../environment/base';
 import { getErc20ReadContract, getErc20WriteContract } from './erc20';
 
 export interface GenerateTransactionsParams {
