@@ -3,28 +3,24 @@ import { deserializePermissionAccount } from '@zerodev/permissions';
 import { toECDSASigner } from '@zerodev/permissions/signers';
 import { createKernelAccountClient, addressToEmptyAccount } from '@zerodev/sdk';
 
+import { chain, publicClient, transport } from '../environment/base';
 import {
-  chain,
   entryPoint,
   kernelVersion,
-  publicClient,
-  transport,
   zerodevPaymaster,
-} from '../environment';
-import { Transaction } from '../aave';
+} from '../environment/zerodev';
 
-export interface TransactionsToUserOpParams {
-  transactions: Transaction[];
-  accountAddress: Address;
+export interface SendPermittedKernelUserOperationParams {
   permittedAddress: Address;
   serializedPermissionAccount: string;
+  signedUserOp: any;
 }
-export async function transactionsToUserOp({
-  transactions,
-  accountAddress,
+
+export async function sendPermittedKernelUserOperation({
   permittedAddress,
   serializedPermissionAccount,
-}: TransactionsToUserOpParams) {
+  signedUserOp,
+}: SendPermittedKernelUserOperationParams) {
   const vincentEmptyAccount = addressToEmptyAccount(permittedAddress);
   const vincentAbilitySigner = await toECDSASigner({
     signer: vincentEmptyAccount,
@@ -49,15 +45,14 @@ export async function transactionsToUserOp({
     },
   });
 
-  const callData = await permissionKernelAccount.encodeCalls(
-    transactions.map((tx) => ({ data: tx.data, to: tx.to }))
-  );
-  const aaveUserOp = await permissionKernelClient.prepareUserOperation({
-    callData,
-  });
+  console.log(`Broadcasting user op to the network...`);
+  const aaveUserOpHash =
+    await permissionKernelClient.sendUserOperation(signedUserOp);
+  console.log('UserOp hash:', aaveUserOpHash);
 
-  console.log(`Aave unsigned userOp:`);
-  console.dir(aaveUserOp, { depth: null });
-
-  return aaveUserOp;
+  const aaveUserOpReceipt =
+    await permissionKernelClient.waitForUserOperationReceipt({
+      hash: aaveUserOpHash,
+    });
+  console.log({ txHash: aaveUserOpReceipt.receipt.transactionHash });
 }

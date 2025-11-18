@@ -1,29 +1,36 @@
 import { signerToEcdsaValidator } from '@zerodev/ecdsa-validator';
+import { toInitConfig } from '@zerodev/permissions';
 import { createKernelAccount, createKernelAccountClient } from '@zerodev/sdk';
-import { zeroAddress } from 'viem';
+import { type Address, zeroAddress } from 'viem';
 import { PrivateKeyAccount } from 'viem/accounts';
 
+import { chain, publicClient, transport } from '../environment/base';
 import {
-  chain,
   entryPoint,
   kernelVersion,
-  publicClient,
-  transport,
   zerodevPaymaster,
-} from '../environment';
+} from '../environment/zerodev';
+import { getPermissionEmptyValidator } from './getPermissionEmptyValidator';
 
 export interface SetupZeroDevAccountParams {
   ownerAccount: PrivateKeyAccount;
+  permittedAddress: Address;
 }
 
 export async function setupZeroDevAccount({
   ownerAccount,
+  permittedAddress,
 }: SetupZeroDevAccountParams) {
+  // Owner validator
   const ownerValidator = await signerToEcdsaValidator(publicClient, {
     entryPoint,
     kernelVersion,
     signer: ownerAccount,
   });
+
+  // Permitted signer empty validator
+  const permissionValidator =
+    await getPermissionEmptyValidator(permittedAddress);
 
   // Set up smart account
   const ownerKernelAccount = await createKernelAccount(publicClient, {
@@ -32,10 +39,12 @@ export async function setupZeroDevAccount({
     plugins: {
       sudo: ownerValidator,
     },
+    initConfig: await toInitConfig(permissionValidator),
   });
 
-  const accountAddress = ownerKernelAccount.address;
-  console.log(`Account address: ${accountAddress}`);
+  console.log(
+    `ZeroDev Kernel Smart Account address: ${ownerKernelAccount.address}`
+  );
 
   const ownerKernelClient = createKernelAccountClient({
     chain,
@@ -59,7 +68,6 @@ export async function setupZeroDevAccount({
       },
     ]),
   });
-
   console.log('Deployment userOp hash:', deployUserOpHash);
 
   const deployUserOpReceipt =
@@ -69,7 +77,6 @@ export async function setupZeroDevAccount({
   console.log({ txHash: deployUserOpReceipt.receipt.transactionHash });
 
   return {
-    accountAddress,
     ownerKernelAccount,
     ownerValidator,
   };

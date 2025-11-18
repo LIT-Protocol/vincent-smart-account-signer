@@ -1,19 +1,21 @@
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { Hex, parseUnits } from 'viem';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - yargs types exist but TypeScript has trouble resolving them with bundler moduleResolution
+// @ts-ignore - yargs types exist, but TypeScript has trouble resolving them with bundler moduleResolution
 import yargs from 'yargs';
 
-import { chain, alchemyRpc, entryPoint, abilityClient } from '../environment';
-import { sendPermittedUserOperation } from '../utils/sendPermittedUserOperation';
-import { setupSmartAccountAndDelegation } from '../utils/setupSmartAccountAndDelegation';
-import { transactionsToUserOp } from '../utils/transactionsToUserOp';
-import { serializeUserOpForVincent } from '../utils/serializeUserOpForVincent';
-import { getERC20Decimals } from '../utils/erc20';
 import {
   getAaveBorrowTx,
   getAvailableMarkets,
 } from '../aave';
+import { chain, alchemyRpc } from '../environment/base';
+import { abilityClient } from '../environment/lit';
+import { entryPoint } from '../environment/zerodev';
+import { sendPermittedKernelUserOperation } from '../utils/sendPermittedKernelUserOperation';
+import { setupZeroDevSmartAccountAndDelegation } from '../utils/setupZeroDevSmartAccountAndDelegation';
+import { transactionsToKernelUserOp } from '../utils/transactionsToKernelUserOp';
+import { getERC20Decimals } from '../utils/erc20';
+import { userOp } from '../utils/userOp';
 
 async function main() {
   const argv = yargs(process.argv)
@@ -33,7 +35,7 @@ async function main() {
 
   // get asset address - if user passed a symbol, try to get it from markets
   let assetAddress = argv.asset;
-  
+
   // Check if it's a symbol (doesn't start with 0x)
   if (!assetAddress.startsWith('0x')) {
     const markets = getAvailableMarkets(chain.id);
@@ -47,7 +49,7 @@ async function main() {
 
   // user setup and delegation
   const { ownerKernelAccount, pkpEthAddress, serializedPermissionAccount } =
-    await setupSmartAccountAndDelegation();
+    await setupZeroDevSmartAccountAndDelegation();
 
   // Get decimals from the ERC20 contract
   const decimals = await getERC20Decimals(assetAddress);
@@ -65,11 +67,10 @@ async function main() {
   aaveTransactions.push(aaveBorrowTx);
 
   // convert the transactions array to a proper zerodev user op
-  const aaveUserOp = await transactionsToUserOp({
-    transactions: aaveTransactions,
-    accountAddress: ownerKernelAccount.address,
-    permittedAddress: pkpEthAddress,
+  const aaveUserOp = await transactionsToKernelUserOp({
     serializedPermissionAccount,
+    permittedAddress: pkpEthAddress,
+    transactions: aaveTransactions,
   });
 
   // send the user op to the lit signer. this is the vincent aave smart account ability.
@@ -81,7 +82,7 @@ async function main() {
     alchemyRpcUrl: alchemyRpc,
     entryPointAddress: entryPoint.address,
     serializedZeroDevPermissionAccount: serializedPermissionAccount,
-    userOp: serializeUserOpForVincent(aaveUserOp),
+    userOp: userOp(aaveUserOp),
   };
   const vincentDelegationContext = {
     delegatorPkpEthAddress: pkpEthAddress,
@@ -112,7 +113,7 @@ async function main() {
   };
 
   // Send user operation
-  await sendPermittedUserOperation({
+  await sendPermittedKernelUserOperation({
     permittedAddress: pkpEthAddress,
     serializedPermissionAccount,
     signedUserOp: signedAaveUserOp,

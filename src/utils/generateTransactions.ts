@@ -1,6 +1,3 @@
-import { deserializePermissionAccount } from '@zerodev/permissions';
-import { toECDSASigner } from '@zerodev/permissions/signers';
-import { createKernelAccountClient, addressToEmptyAccount } from '@zerodev/sdk';
 import { Address, parseUnits, formatUnits } from 'viem';
 
 import {
@@ -12,49 +9,17 @@ import {
 import {
   aaveUsdcProviderWalletClient,
   chain,
-  kernelVersion,
-  entryPoint,
-  transport,
   publicClient,
-  zerodevPaymaster,
-} from '../environment';
+} from '../environment/base';
 import { getErc20ReadContract, getErc20WriteContract } from './erc20';
 
 export interface GenerateTransactionsParams {
   accountAddress: Address;
-  permittedAddress: Address;
-  serializedPermissionAccount: string;
 }
 
 export async function generateTransactions({
   accountAddress,
-  permittedAddress,
-  serializedPermissionAccount,
 }: GenerateTransactionsParams) {
-  const vincentEmptyAccount = addressToEmptyAccount(permittedAddress);
-  const vincentAbilitySigner = await toECDSASigner({
-    signer: vincentEmptyAccount,
-  });
-
-  const permissionKernelAccount = await deserializePermissionAccount(
-    publicClient,
-    entryPoint,
-    kernelVersion,
-    serializedPermissionAccount,
-    vincentAbilitySigner
-  );
-  const permissionKernelClient = createKernelAccountClient({
-    chain,
-    account: permissionKernelAccount,
-    bundlerTransport: transport,
-    client: publicClient,
-    paymaster: {
-      getPaymasterData(userOperation) {
-        return zerodevPaymaster.sponsorUserOperation({ userOperation });
-      },
-    },
-  });
-
   const aaveMarkets = getAvailableMarkets(chain.id);
   const usdcAddress = aaveMarkets['USDC'];
   if (!usdcAddress) {
@@ -66,14 +31,15 @@ export async function generateTransactions({
     accountAddress,
   ])) as bigint;
 
+  // Try to fund with 10 USDC. USDC has 6 decimals.
   const fundedUsdcBalance = parseUnits('10', 6);
   if (!aaveUsdcProviderWalletClient) {
     console.log(
-      `No Aave USDC provider found.  We will skip funding the account.`
+      `No Aave USDC provider found. We will skip funding the account.`
     );
   } else if (accountUsdcBalance < fundedUsdcBalance) {
     console.log(
-      `Funding account with 10 more USDC.  Account has ${formatUnits(accountUsdcBalance, 6)} USDC.`
+      `Account has ${formatUnits(accountUsdcBalance, 6)} USDC. Funding account with 10 more USDC.`
     );
     const providerAddress = aaveUsdcProviderWalletClient.account.address;
 
@@ -86,11 +52,9 @@ export async function generateTransactions({
     ])) as bigint;
     if (providerUsdcBalance <= BigInt(0)) {
       throw new Error(
-        `Wallet ${providerAddress} does not have any USDC (token address: ${usdcAddress}) to fund the ${accountAddress} account`
+        `Wallet ${providerAddress} does not have enough USDC (token address: ${usdcAddress}) to fund the ${accountAddress} account`
       );
     }
-
-    // fund with 10 USDC.  USDC has 6 decimals.
     if (fundedUsdcBalance > providerUsdcBalance) {
       throw new Error(
         `Wallet ${providerAddress} does not have enough USDC (token address: ${usdcAddress}) to fund the ${accountAddress} account.  You need to fund the wallet with 10 USDC.`
@@ -109,12 +73,12 @@ export async function generateTransactions({
     console.log(
       `Funded ${accountAddress} account with ${fundedUsdcBalance} USDC base units`
     );
-  }
 
-  // Get the updated balance of the account after funding
-  accountUsdcBalance = (await usdcContract.read.balanceOf([
-    accountAddress,
-  ])) as bigint;
+    // Get the updated balance of the account after funding
+    accountUsdcBalance = (await usdcContract.read.balanceOf([
+      accountAddress,
+    ])) as bigint;
+  }
 
   // Create transactions to be bundled
   const aaveTransactions = [];
@@ -145,7 +109,7 @@ export async function generateTransactions({
 
     const aaveWithdrawTx = await getAaveWithdrawTx({
       accountAddress,
-      amount: (accountUsdcBalance - BigInt(1)).toString(),
+      amount: (accountUsdcBalance / BigInt(2)).toString(),
       assetAddress: usdcAddress,
       chainId: chain.id,
     });

@@ -4,7 +4,8 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "smart-account-integration": "tsx --env-file .env src/smartAccountIntegration.ts",
+    "kernel-smart-account-integration": "tsx --env-file .env src/kernelSmartAccountIntegration.ts",
+    "crossmint-smart-account-integration": "tsx --env-file .env src/crossmintSmartAccountIntegration.ts",
     "operations:supply": "tsx --env-file .env src/operations/supply.ts",
     "operations:withdraw": "tsx --env-file .env src/operations/withdraw.ts",
     "operations:borrow": "tsx --env-file .env src/operations/borrow.ts",
@@ -22,7 +23,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@bgd-labs/aave-address-book": "^4.32.0",
+    "@crossmint/wallets-sdk": "^0.18.1",
     "@lit-protocol/auth-helpers": "^7.3.1",
     "@lit-protocol/constants": "^7.3.1",
     "@lit-protocol/contracts": "^0.6.0",
@@ -31,7 +32,7 @@
     "@lit-protocol/lit-node-client": "^7.3.1",
     "@lit-protocol/pkp-ethers": "^7.3.1",
     "@lit-protocol/types": "^7.3.1",
-    "@lit-protocol/vincent-ability-aave-smart-account": "0.0.9-mma",
+    "@lit-protocol/vincent-ability-aave-smart-account": "1.0.2-mma",
     "@lit-protocol/vincent-app-sdk": "^2.2.4",
     "@lit-protocol/vincent-contracts-sdk": "^2.0.0",
     "@zerodev/ecdsa-validator": "^5.4.9",
@@ -42,7 +43,7 @@
     "ethers": "^5.8.0",
     "tslib": "2.8.1",
     "uint8arrays": "^5.1.0",
-    "viem": "^2.38.0",
+    "viem": "2.33.1",
     "yargs": "^18.0.0"
   }
 }

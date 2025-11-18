@@ -1,36 +1,29 @@
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
-import { Hex } from 'viem';
+import { Hex, concat } from 'viem';
 
-import {
-  abilityClient,
-  alchemyRpc,
-  entryPoint,
-  ownerAccount,
-  vincentAppId,
-} from './environment';
+import { alchemyRpc } from './environment/base';
+import { abilityClient } from './environment/lit';
+import { entryPoint } from './environment/zerodev';
 import { generateTransactions } from './utils/generateTransactions';
-import { sendPermittedUserOperation } from './utils/sendPermittedUserOperation';
-import { transactionsToUserOp } from './utils/transactionsToUserOp';
-import { serializeUserOpForVincent } from './utils/serializeUserOpForVincent';
-import { setupSmartAccountAndDelegation } from './utils/setupSmartAccountAndDelegation';
+import { sendPermittedKernelUserOperation } from './utils/sendPermittedKernelUserOperation';
+import { setupZeroDevSmartAccountAndDelegation } from './utils/setupZeroDevSmartAccountAndDelegation';
+import { transactionsToKernelUserOp } from './utils/transactionsToKernelUserOp';
+import { userOp } from './utils/userOp';
 
 async function main() {
   // USER
   const { ownerKernelAccount, pkpEthAddress, serializedPermissionAccount } =
-    await setupSmartAccountAndDelegation();
+    await setupZeroDevSmartAccountAndDelegation();
 
   // CLIENT (APP BACKEND)
   const transactions = await generateTransactions({
     accountAddress: ownerKernelAccount.address,
-    permittedAddress: pkpEthAddress,
-    serializedPermissionAccount,
   });
 
-  const aaveUserOp = await transactionsToUserOp({
+  const aaveUserOp = await transactionsToKernelUserOp({
     transactions,
-    accountAddress: ownerKernelAccount.address,
-    permittedAddress: pkpEthAddress,
     serializedPermissionAccount,
+    permittedAddress: pkpEthAddress,
   });
 
   console.log(
@@ -40,8 +33,7 @@ async function main() {
   const vincentAbilityParams = {
     alchemyRpcUrl: alchemyRpc,
     entryPointAddress: entryPoint.address,
-    serializedZeroDevPermissionAccount: serializedPermissionAccount,
-    userOp: serializeUserOpForVincent(aaveUserOp),
+    userOp: userOp(aaveUserOp),
   };
   const vincentDelegationContext = {
     delegatorPkpEthAddress: pkpEthAddress,
@@ -66,12 +58,12 @@ async function main() {
   // User op returns signed
   const signedAaveUserOp = {
     ...aaveUserOp,
-    signature: executeResult.result.userOp.signature as Hex,
+    signature: concat(['0xff', executeResult.result.signature as Hex]),
   };
 
   // CLIENT (APP BACKEND)
   // Send user operation
-  await sendPermittedUserOperation({
+  await sendPermittedKernelUserOperation({
     permittedAddress: pkpEthAddress,
     serializedPermissionAccount,
     signedUserOp: signedAaveUserOp,
