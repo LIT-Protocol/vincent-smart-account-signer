@@ -6,6 +6,7 @@
   "scripts": {
     "kernel-smart-account-integration": "tsx --env-file .env src/kernelSmartAccountIntegration.ts",
     "crossmint-smart-account-integration": "tsx --env-file .env src/crossmintSmartAccountIntegration.ts",
+    "eoa-integration": "tsx --env-file .env src/eoaIntegration.ts",
     "operations:supply": "tsx --env-file .env src/operations/supply.ts",
     "operations:withdraw": "tsx --env-file .env src/operations/withdraw.ts",
     "operations:borrow": "tsx --env-file .env src/operations/borrow.ts",
@@ -32,7 +33,7 @@
     "@lit-protocol/lit-node-client": "^7.3.1",
     "@lit-protocol/pkp-ethers": "^7.3.1",
     "@lit-protocol/types": "^7.3.1",
-    "@lit-protocol/vincent-ability-aave-smart-account": "1.0.2-mma",
+    "@lit-protocol/vincent-ability-aave-smart-account": "1.1.0-mma",
     "@lit-protocol/vincent-app-sdk": "^2.2.4",
     "@lit-protocol/vincent-contracts-sdk": "^2.0.0",
     "@zerodev/ecdsa-validator": "^5.4.9",

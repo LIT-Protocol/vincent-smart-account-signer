@@ -2,26 +2,29 @@ import { Hex, WalletClient, http, createPublicClient, createWalletClient } from 
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
 
-export const alchemyRpc = process.env.ALCHEMY_RPC_URL as string;
-export const zerodevRpc = process.env.ZERODEV_RPC_URL as string;
+const ALCHEMY_RPC_URL = process.env.ALCHEMY_RPC_URL as string | undefined;
+if (!ALCHEMY_RPC_URL) {
+  throw new Error('Missing ALCHEMY_RPC_URL env variable');
+}
+export const alchemyRpc = ALCHEMY_RPC_URL;
 
 export const chain = baseSepolia;
 
-export const transport = http(zerodevRpc);
+export const transport = http(alchemyRpc);
 
 export const publicClient = createPublicClient({
   chain,
   transport,
 });
 
-const aaveUsdcProviderPrivateKey = process.env.AAVE_USDC_PRIVATE_KEY as
+const fundsProviderPrivateKey = process.env.FUNDS_PROVIDER_PRIVATE_KEY as
   | Hex
   | undefined;
-export const aaveUsdcProviderWalletClient: WalletClient | undefined = aaveUsdcProviderPrivateKey
+export const fundsProviderWalletClient: WalletClient | undefined = fundsProviderPrivateKey
   ? createWalletClient({
     chain,
     transport,
-    account: privateKeyToAccount(aaveUsdcProviderPrivateKey),
+    account: privateKeyToAccount(fundsProviderPrivateKey),
   })
   : undefined;
 

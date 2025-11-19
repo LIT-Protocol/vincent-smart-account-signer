@@ -1,3 +1,4 @@
+import { toVincentUserOp } from '@lit-protocol/vincent-ability-aave-smart-account';
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { Hex, parseUnits } from 'viem';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -15,7 +16,6 @@ import { sendPermittedKernelUserOperation } from '../utils/sendPermittedKernelUs
 import { setupZeroDevSmartAccountAndDelegation } from '../utils/setupZeroDevSmartAccountAndDelegation';
 import { transactionsToKernelUserOp } from '../utils/transactionsToKernelUserOp';
 import { getERC20Decimals } from '../utils/erc20';
-import { userOp } from '../utils/userOp';
 
 async function main() {
   const argv = yargs(process.argv)
@@ -82,7 +82,7 @@ async function main() {
     alchemyRpcUrl: alchemyRpc,
     entryPointAddress: entryPoint.address,
     serializedZeroDevPermissionAccount: serializedPermissionAccount,
-    userOp: userOp(aaveUserOp),
+    userOp: toVincentUserOp(aaveUserOp),
   };
   const vincentDelegationContext = {
     delegatorPkpEthAddress: pkpEthAddress,

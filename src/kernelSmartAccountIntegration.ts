@@ -1,14 +1,15 @@
+import { toVincentUserOp } from '@lit-protocol/vincent-ability-aave-smart-account';
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { Hex, concat } from 'viem';
 
 import { alchemyRpc } from './environment/base';
 import { abilityClient } from './environment/lit';
 import { entryPoint } from './environment/zerodev';
+import { fundAccount } from './utils/fundAccount';
 import { generateTransactions } from './utils/generateTransactions';
 import { sendPermittedKernelUserOperation } from './utils/sendPermittedKernelUserOperation';
 import { setupZeroDevSmartAccountAndDelegation } from './utils/setupZeroDevSmartAccountAndDelegation';
 import { transactionsToKernelUserOp } from './utils/transactionsToKernelUserOp';
-import { userOp } from './utils/userOp';
 
 async function main() {
   // USER
@@ -16,6 +17,10 @@ async function main() {
     await setupZeroDevSmartAccountAndDelegation();
 
   // CLIENT (APP BACKEND)
+  await fundAccount({
+    accountAddress: ownerKernelAccount.address,
+  });
+
   const transactions = await generateTransactions({
     accountAddress: ownerKernelAccount.address,
   });
@@ -33,7 +38,7 @@ async function main() {
   const vincentAbilityParams = {
     alchemyRpcUrl: alchemyRpc,
     entryPointAddress: entryPoint.address,
-    userOp: userOp(aaveUserOp),
+    userOp: toVincentUserOp(aaveUserOp),
   };
   const vincentDelegationContext = {
     delegatorPkpEthAddress: pkpEthAddress,

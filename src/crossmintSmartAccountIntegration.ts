@@ -1,14 +1,15 @@
+import { toVincentUserOp } from '@lit-protocol/vincent-ability-aave-smart-account';
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { Address } from 'viem';
 
 import { alchemyRpc } from './environment/base';
 import { abilityClient } from './environment/lit';
 import { entryPoint } from './environment/zerodev';
+import { fundAccount } from './utils/fundAccount';
 import { generateTransactions } from './utils/generateTransactions';
 import { setupCrossmintSmartAccountAndDelegation } from './utils/setupCrossmintSmartAccountAndDelegation';
 import { sendPermittedCrossmintUserOperation } from './utils/sendPermittedCrossmintUserOperation';
 import { transactionsToCrossmintUserOp } from './utils/transactionsToCrossmintUserOp';
-import { userOp } from './utils/userOp';
 
 async function main() {
   // USER
@@ -16,6 +17,10 @@ async function main() {
     await setupCrossmintSmartAccountAndDelegation();
 
   // CLIENT (APP BACKEND)
+  await fundAccount({
+    accountAddress: crossmintAccount.address as Address,
+  });
+
   const transactions = await generateTransactions({
     accountAddress: crossmintAccount.address as Address,
   });
@@ -33,7 +38,7 @@ async function main() {
   const vincentAbilityParams = {
     alchemyRpcUrl: alchemyRpc,
     entryPointAddress: entryPoint.address,
-    userOp: userOp(aaveUserOp.onChain.userOperation),
+    userOp: toVincentUserOp(aaveUserOp.onChain.userOperation),
   };
   const vincentDelegationContext = {
     delegatorPkpEthAddress: pkpEthAddress,
