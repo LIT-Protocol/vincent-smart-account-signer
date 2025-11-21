@@ -3,10 +3,11 @@ import { toECDSASigner } from '@zerodev/permissions/signers';
 import { createKernelAccountClient, addressToEmptyAccount } from '@zerodev/sdk';
 import { type Address } from 'viem';
 
-import { chain, publicClient, transport } from '../environment/base';
+import { chain, publicClient } from '../environment/base';
 import {
   entryPoint,
   kernelVersion,
+  zerodevTransport,
   zerodevPaymaster,
 } from '../environment/zerodev';
 import { Transaction } from '../aave';
@@ -36,7 +37,7 @@ export async function transactionsToKernelUserOp({
   const permissionKernelClient = createKernelAccountClient({
     chain,
     account: permissionKernelAccount,
-    bundlerTransport: transport,
+    bundlerTransport: zerodevTransport,
     client: publicClient,
     paymaster: {
       getPaymasterData(userOperation) {

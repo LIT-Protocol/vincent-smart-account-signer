@@ -4,10 +4,11 @@ import { createKernelAccount, createKernelAccountClient } from '@zerodev/sdk';
 import { type Address, zeroAddress } from 'viem';
 import { PrivateKeyAccount } from 'viem/accounts';
 
-import { chain, publicClient, transport } from '../environment/base';
+import { chain, publicClient } from '../environment/base';
 import {
   entryPoint,
   kernelVersion,
+  zerodevTransport,
   zerodevPaymaster,
 } from '../environment/zerodev';
 import { getPermissionEmptyValidator } from './getPermissionEmptyValidator';
@@ -49,7 +50,7 @@ export async function setupZeroDevAccount({
   const ownerKernelClient = createKernelAccountClient({
     chain,
     account: ownerKernelAccount,
-    bundlerTransport: transport,
+    bundlerTransport: zerodevTransport,
     client: publicClient,
     paymaster: {
       getPaymasterData(userOperation) {

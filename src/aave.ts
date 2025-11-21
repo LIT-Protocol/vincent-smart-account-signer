@@ -9,10 +9,13 @@ import { ERC20_ABI } from './utils/erc20';
 
 export { getAaveAddresses, getAvailableMarkets };
 
+const ZERO_VALUE: Hex = '0x0';
+
 export interface Transaction {
   data: Hex;
   from: Address;
   to: Address;
+  value: Hex;
 }
 
 async function buildApprovalTx(
@@ -30,6 +33,7 @@ async function buildApprovalTx(
     data: approveData,
     from: accountAddress,
     to: assetAddress,
+    value: ZERO_VALUE,
   };
 
   return approveTx;
@@ -79,6 +83,7 @@ async function buildSupplyTx(
     data: supplyData,
     from: accountAddress,
     to: poolAddress,
+    value: ZERO_VALUE,
   };
 
   return supplyTx;
@@ -128,6 +133,7 @@ async function buildWithdrawTx(
     data: withdrawData,
     from: accountAddress,
     to: poolAddress,
+    value: ZERO_VALUE,
   };
 
   return withdrawTx;
@@ -173,6 +179,7 @@ async function buildBorrowTx(
     data: borrowData,
     from: accountAddress,
     to: poolAddress,
+    value: ZERO_VALUE,
   };
 
   return borrowTx;
@@ -226,6 +233,7 @@ async function buildRepayTx(
     data: repayData,
     from: accountAddress,
     to: poolAddress,
+    value: ZERO_VALUE,
   };
 
   return repayTx;
