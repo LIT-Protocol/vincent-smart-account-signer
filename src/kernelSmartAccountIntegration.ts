@@ -60,13 +60,13 @@ async function main() {
     throw new Error(`Execute failed: ${JSON.stringify(executeResult)}`);
   }
 
-  // User op returns signed
+  // Add signature to User Operation
   const signedAaveUserOp = {
     ...aaveUserOp,
+    // 0xff is the signer id assigned to the Vincent PKP. Hence we have to prepend it to its signature
     signature: concat(['0xff', executeResult.result.signature as Hex]),
   };
 
-  // CLIENT (APP BACKEND)
   // Send user operation
   await sendPermittedKernelUserOperation({
     permittedAddress: pkpEthAddress,
