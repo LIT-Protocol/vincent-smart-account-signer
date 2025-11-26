@@ -164,6 +164,7 @@ async function getOrMintUserPKP(
 
     console.log(`✅ User PKP minted successfully`);
     console.log(`   Token ID: ${userPKP.tokenId}`);
+    console.log(`   Public key: ${userPKP.publicKey}`);
     console.log(`   Address: ${userPKP.ethAddress}`);
 
     // Add PKP to payer's list for free capacity credits
