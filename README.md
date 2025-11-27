@@ -117,7 +117,7 @@ using the Vincent PKP as the signer. Choose the path that best fits your use cas
 
 - Deploys a Safe Smart Account (v1.4.1)
 - Adds the Vincent PKP as another owner with threshold 1
-- This allows the Vincent PKP to sign UserOperations directly for the Safe while keeping the owner EOA as the primary signer
+- This allows the Vincent PKP to sign UserOperations directly for the Safe while keeping the owner EOA as signer
 
 **Key outputs:**
 
@@ -191,13 +191,12 @@ which can then reconstruct the account context without needing the owner's priva
 The backend service receives the serialized permission account and:
 
 1. Deserializes the permission account using the Vincent empty account
-2. Creates a Kernel client with the permission account
-3. Builds an Aave transaction (in this case, an ERC20 approval):
+2. Builds an Aave transaction (in this case, an ERC20 approval):
    - Gets USDC token address for the chain (from Aave Address Book)
    - Gets Aave Pool address
    - Encodes an `approve(spender, amount)` call
    - If the account already holds USDC, `supply` and `withdraw` operations will also be bundled after the approval
-4. Prepares an **unsigned UserOperation** containing:
+3. Prepares an **unsigned UserOperation** containing:
    - Transaction calldata
    - Gas limits and fee parameters
    - Nonce
@@ -207,18 +206,6 @@ The backend service receives the serialized permission account and:
 
 - Provides chain-specific Aave protocol addresses using the official Aave Address Book
 - Builds the Aave user operation to use USDC in an Aave lending pool
-
-**Key output:**
-
-- `aaveUserOp`: An unsigned UserOperation ready for signing
-
-### Step 4-5 (Safe mode): Generate Aave User Operation
-
-**File:** `src/utils/transactionsToSafeUserOp.ts`
-
-1. Creates a dummy signer for the PKP address
-2. Re-instantiates the Safe account with the dummy signer
-3. Prepares an unsigned UserOperation containing the Aave transactions
 
 **Key output:**
 
@@ -246,6 +233,7 @@ In both modes, the request is sent to the Vincent ability running on Lit Protoco
 **Files:**
 
 - SA (Kernel): `src/kernelSmartAccountIntegration.ts`
+- SA (Crossmint): `src/crossmintSmartAccountIntegration.ts`
 - SA (Safe): `src/safeSmartAccountIntegration.ts`
 - EOA: `src/eoaIntegration.ts`
 
@@ -272,12 +260,11 @@ await abilityClient.execute(vincentAbilityParams, vincentDelegationContext);
    - Validates against the allowlist of Aave protocol addresses
 
 **The only difference:** The `execute` phase also **signs** the request with the PKP after all validations pass, while
-`precheck` only validates without signing. In SA mode it returns a UserOp signature; in EOA mode it returns a standard
-transaction signature.
+`precheck` only validates without signing.
+In SA mode (passing a user operation) `execute` returns a UserOp signature using the standard UserOp signing method `getUserOperationHash` or a custom EIP-712 signature based on the user operation; in EOA mode it returns a standard transaction signature.
 
 **Key package:** `@lit-protocol/vincent-ability-aave-smart-account`
-This package contains the bundled Vincent ability code that runs inside Lit Protocol's Trusted Execution Environment (
-TEE).
+This package contains the bundled Vincent ability code that runs inside Lit Protocol's Trusted Execution Environment (TEE) using its unmutable code.
 
 **Key output:**
 
@@ -292,14 +279,9 @@ The ability now supports multiple signing methods depending on the account type:
     - Signs the `getUserOperationHash` of the UserOp.
 2.  **EIP-712 Signing** (Safe):
     - Signs an EIP-712 message derived from the UserOp.
-    - Requires passing `safe4337ModuleAddress` and `eip712Params` in the ability parameters.
+    - Used when passing `safe4337ModuleAddress` and `eip712Params` in the ability parameters.
 3.  **EOA Signing** (Vincent PKP):
     - Signs a raw transaction hash.
-
-**New Ability Parameters:**
-
-- `safe4337ModuleAddress`: Address of the Safe 4337 module (required for Safe).
-- `eip712Params`: EIP-712 domain parameters (required for Safe).
 
 ### Step 8-9: Broadcast Transaction
 
@@ -307,7 +289,7 @@ SA (Kernel):
 
 **File:** `src/utils/sendPermittedKernelUserOperation.ts`
 
-1. Deserializes the permission account again
+1. Deserializes the permission account
 2. Creates a Kernel client
 3. Sends the signed UserOperation to the bundler
 4. Waits for the UserOperation to be included in a block
@@ -340,15 +322,15 @@ EOA:
 
 - Node.js (v18 or higher recommended)
 - npm or yarn
-- **Smart Account Provider** (choose one or both):
+- **Smart Account Provider** (choose the one you want to use):
   - **ZeroDev**: A ZeroDev project (for Kernel accounts, bundler and paymaster)
   - **Crossmint**: A Crossmint API key (for Crossmint smart accounts)
   - **Safe**: Pimlico API key (for Safe accounts, bundler and paymaster)
-- An Alchemy account (for RPC access)
+- An Alchemy account (for RPC access and operations simulation)
 - A Vincent App with the Aave smart account ability configured
 - Private key for delegatee account of that app (used to interact with Lit Protocol)
 - **Optional:** Private key for owner account (auto-generated if not provided)
-- **Optional (EOA mode):** A funding wallet with Base Sepolia USDC and native tokens to top up the PKP EOA
+- **Optional:** A funding wallet with Base Sepolia USDC (to also do supply and withdraw operations) and native tokens (only needed to top up the PKP EOA)
 - **Optional (choose one of two PKP setup approaches):**
   - A Vincent PKP address from Lit Protocol Dashboard (manual setup), OR
   - Lit relay credentials (LIT_RELAY_API_KEY and LIT_PAYER_SECRET_KEY) for automatic PKP creation
@@ -387,12 +369,12 @@ Before running this POC, you need to create a Vincent app with the appropriate a
    - You'll use this as `VINCENT_APP_ID` in your `.env` file
 
 6. **Choose Your PKP Setup Method**
-   - **Manual Delegation (Recommended for production):**
+   - **Manual Delegation:**
      - Log into the dashboard with your owner EOA
      - Delegate your app to create an agent PKP
      - Copy the agent PKP address for `PKP_ETH_ADDRESS`
 
-   - **Automatic Setup (For development):**
+   - **Automatic Setup:**
      - Contact Lit Protocol to obtain:
        - `LIT_RELAY_API_KEY`
        - `LIT_PAYER_SECRET_KEY`
@@ -405,7 +387,6 @@ Before running this POC, you need to create a Vincent app with the appropriate a
   - View and manage your user PKP
   - Control your agent PKP
   - Revoke or modify app delegations
-  - Monitor ability execution history
 
 - **VINCENT_APP_ID Requirement**: This variable is only required when using automatic PKP creation (Option B)
 
@@ -453,13 +434,16 @@ DELEGATEE_PRIVATE_KEY=0x...
 # Vincent App ID (get from Vincent Dashboard at https://dashboard.heyvincent.ai)
 VINCENT_APP_ID=
 
-# Crossmint API Key (required only for Crossmint integration)
-CROSSMINT_API_KEY=
-
-# Alchemy RPC URL for Base Sepolia
+# Alchemy RPC URL for Base Sepolia. Always required, used for operations simulation inside Vincent Ability
 ALCHEMY_RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_API_KEY
 
-# ZeroDev bundler RPC URL (required only for ZeroDev/Kernel integration)
+# Crossmint API Key. Required only for Crossmint integration
+CROSSMINT_API_KEY=
+
+# Pimlico RPC URL for Base Sepolia. Required only for Safe integration
+PIMLICO_RPC_URL=https://base-sepolia.pimlico.io/v1/YOUR_API_KEY
+
+# ZeroDev bundler RPC URL. Required only for ZeroDev/Kernel integration
 ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
 ```
 
@@ -495,7 +479,7 @@ ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
 
 5. **PKP Setup** - Choose one of two approaches:
 
-   **Option A: Manual PKP Setup (Recommended for production)**
+   **Option A: Manual PKP Setup**
    - Visit the [Vincent Dashboard](https://dashboard.heyvincent.ai)
    - Create a user account and authenticate with your EOA
    - Create or select a Vincent app
@@ -505,8 +489,8 @@ ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
 
    **Option B: Automatic PKP Creation**
    - Leave `PKP_ETH_ADDRESS` empty
-   - Set `LIT_RELAY_API_KEY` (contact Lit Protocol team or use test key)
-   - Set `LIT_PAYER_SECRET_KEY` (contact Lit Protocol team or use test key)
+   - Set `LIT_RELAY_API_KEY` (contact Lit Protocol team)
+   - Set `LIT_PAYER_SECRET_KEY` (contact Lit Protocol team)
    - The script will automatically:
      - Create a user PKP authenticated by the owner EOA
      - Mint an agent PKP controlled by the user PKP
@@ -528,7 +512,14 @@ ZERODEV_RPC_URL=https://rpc.zerodev.app/api/v2/bundler/YOUR_PROJECT_ID
      - Navigate to the API section in your dashboard
      - Generate an API key for your project
 
-7. **ALCHEMY_RPC_URL** (Required for both providers):
+   **For Safe Integration:**
+   - **PIMLICO_RPC_URL**:
+     - Sign up at [Pimlico](https://dashboard.pimlico.io/)
+     - Navigate to the API section in your dashboard
+     - Generate an API key for your project
+     - Copy the bundler RPC URL
+
+7. **ALCHEMY_RPC_URL** (Required for operations simulation in Vincent Ability):
    - Sign up at [Alchemy](https://www.alchemy.com)
    - Create a new app for Base Sepolia
    - Copy the HTTPS endpoint
@@ -781,6 +772,7 @@ This POC demonstrates a revolutionary approach to delegated signing:
    - Ensure required variables are filled: `VINCENT_APP_ID`, `DELEGATEE_PRIVATE_KEY`, `ALCHEMY_RPC_URL`
    - For ZeroDev/Kernel: also set `ZERODEV_RPC_URL`
    - For Crossmint: also set `CROSSMINT_API_KEY`
+   - For Safe: also set `PIMLICO_RPC_URL`
    - For PKP setup, provide either `PKP_ETH_ADDRESS` OR both `LIT_RELAY_API_KEY` and `LIT_PAYER_SECRET_KEY`
 
 2. **"Precheck failed"**:
@@ -808,6 +800,7 @@ For more detailed logs, you can modify the scripts to add additional logging or 
 ```bash
 DEBUG=* npm run kernel-smart-account-integration
 DEBUG=* npm run crossmint-smart-account-integration
+DEBUG=* npm run safe-smart-account-integration
 DEBUG=* npm run eoa-integration
 ```
 
