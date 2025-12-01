@@ -1,33 +1,33 @@
-import { toVincentUserOp } from '@lit-protocol/vincent-ability-aave-smart-account';
+import { toVincentUserOp, safeEip712Params } from '@lit-protocol/vincent-ability-aave-smart-account';
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
-import { Hex, concat } from 'viem';
+import { Address, Hex, concat, toHex } from 'viem';
 
 import { alchemyRpc } from './environment/base';
 import { abilityClient } from './environment/lit';
-import { entryPoint } from './environment/zerodev';
+import { entryPoint } from './environment/safe';
 import { fundAccount } from './utils/fundAccount';
 import { generateTransactions } from './utils/generateTransactions';
-import { sendPermittedKernelUserOperation } from './utils/sendPermittedKernelUserOperation';
-import { setupZeroDevSmartAccountAndDelegation } from './utils/setupZeroDevSmartAccountAndDelegation';
-import { transactionsToKernelUserOp } from './utils/transactionsToKernelUserOp';
+import { sendPermittedSafeUserOperation } from './utils/sendPermittedSafeUserOperation';
+import { setupSafeSmartAccountAndDelegation } from './utils/setupSafeSmartAccountAndDelegation';
+import { transactionsToSafeUserOp } from './utils/transactionsToSafeUserOp';
 
 async function main() {
   // USER
-  const { ownerKernelAccount, pkpEthAddress, serializedPermissionAccount } =
-    await setupZeroDevSmartAccountAndDelegation();
+  const { safeAccount, pkpEthAddress } =
+    await setupSafeSmartAccountAndDelegation();
 
   // CLIENT (APP BACKEND)
   await fundAccount({
-    accountAddress: ownerKernelAccount.address,
+    accountAddress: safeAccount.address,
   });
 
   const transactions = await generateTransactions({
-    accountAddress: ownerKernelAccount.address,
+    accountAddress: safeAccount.address,
   });
 
-  const aaveUserOp = await transactionsToKernelUserOp({
+  const aaveUserOp = await transactionsToSafeUserOp({
     transactions,
-    serializedPermissionAccount,
+    safeAddress: safeAccount.address,
     permittedAddress: pkpEthAddress,
   });
 
@@ -35,9 +35,15 @@ async function main() {
     `Sending user op and serialized session signer to the Lit Signer...`
   );
 
+  const validAfter = 0;
+  const validUntil = 0;
   const vincentAbilityParams = {
+    validAfter,
+    validUntil,
     alchemyRpcUrl: alchemyRpc,
+    eip712Params: safeEip712Params,
     entryPointAddress: entryPoint.address,
+    safe4337ModuleAddress: '0x75cf11467937ce3F2f357CE24ffc3DBF8fD5c226' as Address, // Using the default one
     userOp: toVincentUserOp(aaveUserOp),
   };
   const vincentDelegationContext = {
@@ -63,14 +69,15 @@ async function main() {
   // Add signature to User Operation
   const signedAaveUserOp = {
     ...aaveUserOp,
-    // 0xff is the signer id assigned to the Vincent PKP. Hence we have to prepend it to its signature
-    signature: concat(['0xff', executeResult.result.signature as Hex]),
+    // Safe signatures have the following shape [validAfter (6 bytes)][validUntil (6 bytes)][sig (ECDSA)][maybe-module]
+    signature: concat([toHex(validAfter, { size: 6 }), toHex(validUntil, { size: 6 }), executeResult.result.signature as Hex]),
   };
 
+  console.log(`Signed user op: `);
+  console.dir(signedAaveUserOp, { depth: null });
+
   // Send user operation
-  await sendPermittedKernelUserOperation({
-    permittedAddress: pkpEthAddress,
-    serializedPermissionAccount,
+  await sendPermittedSafeUserOperation({
     signedUserOp: signedAaveUserOp,
   });
 
