@@ -3,7 +3,7 @@ import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/a
 import { Hex, concat } from 'viem';
 
 import { alchemyRpc } from './environment/base';
-import { abilityClient } from './environment/lit';
+import { abilityClient, vincentAppId } from './environment/lit';
 import { entryPoint } from './environment/zerodev';
 import { fundAccount } from './utils/fundAccount';
 import { generateTransactions } from './utils/generateTransactions';
@@ -23,6 +23,7 @@ async function main() {
 
   const transactions = await generateTransactions({
     accountAddress: ownerKernelAccount.address,
+    vincentAppId,
   });
 
   const aaveUserOp = await transactionsToKernelUserOp({

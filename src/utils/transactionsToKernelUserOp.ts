@@ -49,6 +49,7 @@ export async function transactionsToKernelUserOp({
   const callData = await permissionKernelAccount.encodeCalls(
     transactions.map((tx) => ({ data: tx.data, to: tx.to }))
   );
+  console.log('Preparing user op');
   const aaveUserOp = await permissionKernelClient.prepareUserOperation({
     callData,
   });

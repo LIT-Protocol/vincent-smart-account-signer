@@ -11,10 +11,12 @@ import { getErc20ReadContract } from './erc20';
 
 export interface GenerateTransactionsParams {
   accountAddress: Address;
+  vincentAppId: number;
 }
 
 export async function generateTransactions({
   accountAddress,
+  vincentAppId,
 }: GenerateTransactionsParams) {
   const aaveMarkets = getAvailableMarkets(chain.id);
   const usdcAddress = aaveMarkets['USDC'];
@@ -51,6 +53,7 @@ export async function generateTransactions({
       amount: accountUsdcBalance.toString(),
       assetAddress: usdcAddress,
       chainId: chain.id,
+      appId: vincentAppId,
     });
     aaveTransactions.push(aaveSupplyTx);
 
@@ -59,6 +62,7 @@ export async function generateTransactions({
       amount: (accountUsdcBalance / BigInt(2)).toString(),
       assetAddress: usdcAddress,
       chainId: chain.id,
+      appId: vincentAppId,
     });
     aaveTransactions.push(aaveWithdrawTx);
   }
