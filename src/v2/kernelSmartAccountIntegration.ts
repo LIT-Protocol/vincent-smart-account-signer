@@ -10,7 +10,6 @@ import { fundAccount } from '../utils/fundAccount';
 import { generateTransactions } from '../utils/generateTransactions';
 import { transactionsToKernelUserOp } from '../utils/transactionsToKernelUserOp';
 import { setupVincentDevelopment } from './setupVincentDelegation';
-import { executeVincentAbility } from './executeVincentAbility';
 
 // TODO: ZerodevSmartAccountInfo is not exported from the main package index
 // Defining locally until the package exports are updated
@@ -59,18 +58,35 @@ async function main() {
     entryPointAddress: entryPoint.address,
     userOp: toVincentUserOp(aaveUserOp),
   };
-
-  const signature = await executeVincentAbility({
-    abilityClient,
-    vincentAbilityParams,
+  const vincentDelegationContext = {
     delegatorPkpEthAddress: pkpEthAddress as Hex,
-  });
+  };
+
+  const precheckResult = await abilityClient.precheck(
+    vincentAbilityParams,
+    vincentDelegationContext
+  );
+  if (!precheckResult.success) {
+    throw new Error(`Precheck failed: ${JSON.stringify(precheckResult)}`);
+  }
+
+  const executeResult = await abilityClient.execute(
+    vincentAbilityParams,
+    vincentDelegationContext
+  );
+  if (!executeResult.success) {
+    throw new Error(`Execute failed: ${JSON.stringify(executeResult)}`);
+  }
+
+  if (!executeResult.result?.signature) {
+    throw new Error('Execute succeeded but signature is undefined');
+  }
 
   // Add signature to User Operation
   const signedAaveUserOp = {
     ...aaveUserOp,
     // 0xff is the signer id assigned to the Vincent PKP. Hence we have to prepend it to its signature
-    signature: concat(['0xff', signature]),
+    signature: concat(['0xff', executeResult.result.signature as Hex]),
   };
 
   // Send user operation

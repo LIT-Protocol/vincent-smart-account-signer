@@ -10,7 +10,6 @@ import { fundAccount } from '../utils/fundAccount';
 import { generateTransactions } from '../utils/generateTransactions';
 import { transactionsToSafeUserOp } from '../utils/transactionsToSafeUserOp';
 import { setupVincentDevelopment } from './setupVincentDelegation';
-import { executeVincentAbility } from './executeVincentAbility';
 
 async function main() {
   // USER - Complete setup using e2e-test-utils
@@ -57,18 +56,35 @@ async function main() {
     safe4337ModuleAddress: '0x75cf11467937ce3F2f357CE24ffc3DBF8fD5c226' as Address,
     userOp: toVincentUserOp(aaveUserOp),
   };
-
-  const executeResult = await executeVincentAbility({
-    abilityClient,
-    vincentAbilityParams,
+  const vincentDelegationContext = {
     delegatorPkpEthAddress: pkpEthAddress as Hex,
-  });
+  };
+
+  const precheckResult = await abilityClient.precheck(
+    vincentAbilityParams,
+    vincentDelegationContext
+  );
+  if (!precheckResult.success) {
+    throw new Error(`Precheck failed: ${JSON.stringify(precheckResult)}`);
+  }
+
+  const executeResult = await abilityClient.execute(
+    vincentAbilityParams,
+    vincentDelegationContext
+  );
+  if (!executeResult.success) {
+    throw new Error(`Execute failed: ${JSON.stringify(executeResult)}`);
+  }
+
+  if (!executeResult.result?.signature) {
+    throw new Error('Execute succeeded but signature is undefined');
+  }
 
   // Add signature to User Operation
   const signedAaveUserOp = {
     ...aaveUserOp,
     // Safe signatures have the following shape [validAfter (6 bytes)][validUntil (6 bytes)][sig (ECDSA)][maybe-module]
-    signature: concat([toHex(validAfter, { size: 6 }), toHex(validUntil, { size: 6 }), executeResult]),
+    signature: concat([toHex(validAfter, { size: 6 }), toHex(validUntil, { size: 6 }), executeResult.result.signature as Hex]),
   };
 
   console.log(`Signed user op: `);

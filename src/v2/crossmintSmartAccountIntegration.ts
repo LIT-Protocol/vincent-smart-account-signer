@@ -10,7 +10,6 @@ import { fundAccount } from '../utils/fundAccount';
 import { generateTransactions } from '../utils/generateTransactions';
 import { transactionsToCrossmintUserOp } from '../utils/transactionsToCrossmintUserOp';
 import { setupVincentDevelopment } from './setupVincentDelegation';
-import { executeVincentAbility } from './executeVincentAbility';
 
 async function main() {
   // USER - Complete setup using e2e-test-utils
@@ -56,12 +55,31 @@ async function main() {
     entryPointAddress: entryPoint.address,
     userOp: toVincentUserOp(aaveUserOp.onChain.userOperation),
   };
-
-  const signature = await executeVincentAbility({
-    abilityClient,
-    vincentAbilityParams,
+  const vincentDelegationContext = {
     delegatorPkpEthAddress: pkpEthAddress as Hex,
-  });
+  };
+
+  const precheckResult = await abilityClient.precheck(
+    vincentAbilityParams,
+    vincentDelegationContext
+  );
+  if (!precheckResult.success) {
+    throw new Error(`Precheck failed: ${JSON.stringify(precheckResult)}`);
+  }
+
+  const executeResult = await abilityClient.execute(
+    vincentAbilityParams,
+    vincentDelegationContext
+  );
+  if (!executeResult.success) {
+    throw new Error(`Execute failed: ${JSON.stringify(executeResult)}`);
+  }
+
+  if (!executeResult.result?.signature) {
+    throw new Error('Execute succeeded but signature is undefined');
+  }
+
+  const signature = executeResult.result.signature as Hex;
 
   // Add signature to User Operation
   const signedAaveUserOp = {
