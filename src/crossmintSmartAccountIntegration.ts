@@ -1,12 +1,12 @@
-import { toVincentUserOp } from '@lit-protocol/vincent-ability-aave-smart-account';
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { Address } from 'viem';
 
-import { alchemyRpc } from './environment/base';
-import { abilityClient } from './environment/lit';
-import { entryPoint } from './environment/zerodev';
 import { fundAccount } from './utils/fundAccount';
-import { generateTransactions } from './utils/generateTransactions';
+import {
+  generateSupplyTransactions,
+  generateWithdrawTransactions,
+} from './utils/generateTransactions';
+import { getEcdsaUserOperationSignature } from './utils/getEcdsaUserOperationSignature';
 import { setupCrossmintSmartAccountAndDelegation } from './utils/setupCrossmintSmartAccountAndDelegation';
 import { sendPermittedCrossmintUserOperation } from './utils/sendPermittedCrossmintUserOperation';
 import { transactionsToCrossmintUserOp } from './utils/transactionsToCrossmintUserOp';
@@ -21,61 +21,68 @@ async function main() {
     accountAddress: crossmintAccount.address as Address,
   });
 
-  const transactions = await generateTransactions({
+  // First we supply to Aave
+  const supplyTransactions = await generateSupplyTransactions({
     accountAddress: crossmintAccount.address as Address,
   });
 
-  const aaveUserOp = await transactionsToCrossmintUserOp({
-    transactions,
+  const supplyAaveUserOp = await transactionsToCrossmintUserOp({
     crossmintAccountAddress: crossmintAccount.address as Address,
     permittedAddress: pkpEthAddress,
+    transactions: supplyTransactions,
   });
 
-  console.log(
-    `Sending user op and serialized session signer to the Lit Signer...`
-  );
-
-  const vincentAbilityParams = {
-    alchemyRpcUrl: alchemyRpc,
-    entryPointAddress: entryPoint.address,
-    userOp: toVincentUserOp(aaveUserOp.onChain.userOperation),
-  };
-  const vincentDelegationContext = {
-    delegatorPkpEthAddress: pkpEthAddress,
-  };
-
-  const precheckResult = await abilityClient.precheck(
-    vincentAbilityParams,
-    vincentDelegationContext
-  );
-  if (!precheckResult.success) {
-    throw new Error(`Precheck failed: ${JSON.stringify(precheckResult)}`);
-  }
-
-  const executeResult = await abilityClient.execute(
-    vincentAbilityParams,
-    vincentDelegationContext
-  );
-  if (!executeResult.success) {
-    throw new Error(`Execute failed: ${JSON.stringify(executeResult)}`);
-  }
+  const supplyUserOperationSignature = await getEcdsaUserOperationSignature({
+    pkpAddress: pkpEthAddress,
+    userOp: supplyAaveUserOp.onChain.userOperation,
+  });
 
   // CLIENT (APP BACKEND)
   // Send user operation
   await sendPermittedCrossmintUserOperation({
     accountAddress: crossmintAccount.address as Address,
-    userOp: aaveUserOp,
-    signature: executeResult.result.signature,
+    userOp: supplyAaveUserOp,
+    signature: supplyUserOperationSignature,
     signerAddress: pkpEthAddress,
   });
 
-  await disconnectVincentAbilityClients();
+  // Crossmint only returns the user op hash, not the tx so we just wait a few seconds for it
+  await new Promise<void>(resolve => setTimeout(() => resolve(), 5_000));
 
-  console.log('Success! User operation sent and executed successfully.');
-  process.exit(0);
+  // Then we withdraw from aave
+  const withdrawTransactions = await generateWithdrawTransactions({
+    accountAddress: crossmintAccount.address as Address,
+  });
+
+  const withdrawAaveUserOp = await transactionsToCrossmintUserOp({
+    crossmintAccountAddress: crossmintAccount.address as Address,
+    permittedAddress: pkpEthAddress,
+    transactions: withdrawTransactions,
+  });
+
+  const withdrawUserOperationSignature = await getEcdsaUserOperationSignature({
+    pkpAddress: pkpEthAddress,
+    userOp: withdrawAaveUserOp.onChain.userOperation,
+  });
+
+  // CLIENT (APP BACKEND)
+  // Send user operation
+  await sendPermittedCrossmintUserOperation({
+    accountAddress: crossmintAccount.address as Address,
+    userOp: withdrawAaveUserOp,
+    signature: withdrawUserOperationSignature,
+    signerAddress: pkpEthAddress,
+  });
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await disconnectVincentAbilityClients();
+
+    console.log('Success! User operation sent and executed successfully.');
+    process.exit(0);
+  });

@@ -1,14 +1,14 @@
-import { toVincentUserOp } from '@lit-protocol/vincent-ability-aave-smart-account';
+import {
+  getAaveBorrowTx,
+  getAvailableMarkets,
+  toVincentUserOp,
+} from '@lit-protocol/vincent-ability-aave';
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { Hex, parseUnits } from 'viem';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - yargs types exist, but TypeScript has trouble resolving them with bundler moduleResolution
 import yargs from 'yargs';
 
-import {
-  getAaveBorrowTx,
-  getAvailableMarkets,
-} from '../aave';
 import { chain, alchemyRpc } from '../environment/base';
 import { abilityClient } from '../environment/lit';
 import { entryPoint } from '../environment/zerodev';

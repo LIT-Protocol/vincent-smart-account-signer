@@ -1,8 +1,8 @@
+import { Transaction } from '@lit-protocol/vincent-ability-aave';
 import { type Address } from 'viem';
 
 import { chain } from '../environment/base';
 import { crossmintWalletApiClient } from '../environment/crossmint';
-import { Transaction } from '../aave';
 
 export interface TransactionsToCrossmintUserOpParams {
   crossmintAccountAddress: Address;

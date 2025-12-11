@@ -1,9 +1,12 @@
 import { createSmartAccountClient } from 'permissionless';
 import { createPimlicoClient } from 'permissionless/clients/pimlico';
-import { http } from 'viem';
+import { Address, http } from 'viem';
 import { entryPoint07Address } from 'viem/account-abstraction';
 
 import { chain } from './base';
+
+export const safe4337ModuleAddress =
+  '0x75cf11467937ce3F2f357CE24ffc3DBF8fD5c226' as Address;
 
 const PIMLICO_RPC_URL = process.env.PIMLICO_RPC_URL as string | undefined;
 if (!PIMLICO_RPC_URL) {

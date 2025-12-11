@@ -1,6 +1,6 @@
+import { getAvailableMarkets } from '@lit-protocol/vincent-ability-aave';
 import { Address, formatUnits, parseUnits } from 'viem';
 
-import { getAvailableMarkets } from '../aave';
 import {
   fundsProviderWalletClient,
   chain,

@@ -1,31 +1,31 @@
+import { toVincentTransaction, Transaction } from '@lit-protocol/vincent-ability-aave';
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
-import { toVincentTransaction } from '@lit-protocol/vincent-ability-aave-smart-account';
-import { Address, Hex, parseUnits, parseSignature, serializeTransaction } from 'viem';
+import {
+  Address, Hex,
+  parseUnits,
+  parseSignature,
+  serializeTransaction,
+} from 'viem';
 
 import { alchemyRpc, ownerAccount, publicClient } from './environment/base';
 import { abilityClient, vincentAppId } from './environment/lit';
-import { generateTransactions } from './utils/generateTransactions';
+import {
+  generateSupplyTransactions,
+  generateWithdrawTransactions,
+} from './utils/generateTransactions';
 import { fundAccount } from './utils/fundAccount';
 import { setupVincentDelegation } from './utils/setupVincentDelegation';
 
-async function main() {
-  const pkpEthAddress = await setupVincentDelegation({
-    ownerAccount,
-    vincentAppId,
-  });
+interface SendTransactionsParams {
+  accountAddress: Address;
+  transactions: Transaction[];
+}
 
-  await fundAccount({
-    accountAddress: pkpEthAddress as Address,
-    // We cannot estimate gas without any funds, so we use a default value
-    nativeFunds: parseUnits('0.0001', 18),
-  });
-
-  const transactions = await generateTransactions({
-    accountAddress: pkpEthAddress as Address,
-  });
-
+async function sendPkpTransactions({
+  accountAddress, transactions,
+}: SendTransactionsParams) {
   const vincentDelegationContext = {
-    delegatorPkpEthAddress: pkpEthAddress,
+    delegatorPkpEthAddress: accountAddress,
   };
 
   for (const [index, transaction] of transactions.entries()) {
@@ -35,8 +35,8 @@ async function main() {
     console.log(`   → To: ${transaction.to}`);
 
     const transactionRequest = await publicClient.prepareTransactionRequest({
-      account: pkpEthAddress,
-      from: pkpEthAddress,
+      account: accountAddress,
+      from: accountAddress,
       data: transaction.data,
       to: transaction.to,
       value: BigInt(transaction.value),
@@ -86,17 +86,47 @@ async function main() {
     });
     console.log(`   ✅ Transaction confirmed at hash ${txHash}`);
   }
-
-  await disconnectVincentAbilityClients();
-
-  console.log(
-    '\n🎉 Success! All transactions signed and broadcasted for the Vincent PKP.'
-  );
-  process.exit(0);
 }
 
-main().catch(async (error) => {
-  console.error(error);
-  await disconnectVincentAbilityClients().catch(() => undefined);
-  process.exit(1);
-});
+async function main() {
+  const pkpEthAddress = await setupVincentDelegation({
+    ownerAccount,
+    vincentAppId,
+  });
+
+  await fundAccount({
+    accountAddress: pkpEthAddress,
+    // We cannot estimate gas without any funds, so we use a default value
+    nativeFunds: parseUnits('0.0001', 18),
+  });
+
+  // First we supply to Aave
+  const supplyTransactions = await generateSupplyTransactions({
+    accountAddress: pkpEthAddress,
+  });
+  await sendPkpTransactions({
+    accountAddress: pkpEthAddress,
+    transactions: supplyTransactions,
+  });
+
+  // Then we withdraw from aave
+  const withdrawTransactions = await generateWithdrawTransactions({
+    accountAddress: pkpEthAddress,
+  });
+  await sendPkpTransactions({
+    accountAddress: pkpEthAddress,
+    transactions: withdrawTransactions,
+  });
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await disconnectVincentAbilityClients();
+
+    console.log('Success! Transactions sent and executed successfully.');
+    process.exit(0);
+  });

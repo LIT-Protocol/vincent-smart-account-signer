@@ -1,8 +1,8 @@
+import { Transaction } from '@lit-protocol/vincent-ability-aave';
 import { toSafeSmartAccount } from 'permissionless/accounts';
 import { createSmartAccountClient } from 'permissionless';
 import { type Address } from 'viem';
 
-import { Transaction } from '../aave';
 import { addressToAccount } from './addressToAccount';
 import { chain, publicClient } from '../environment/base';
 import { entryPoint, pimlicoTransport, pimlicoClient, safeVersion } from '../environment/safe';

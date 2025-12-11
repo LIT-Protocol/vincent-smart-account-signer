@@ -1,5 +1,5 @@
 import { LIT_RPC } from '@lit-protocol/constants';
-import { bundledVincentAbility } from '@lit-protocol/vincent-ability-aave-smart-account';
+import { bundledVincentAbility } from '@lit-protocol/vincent-ability-aave';
 import { getVincentAbilityClient } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { ethers } from 'ethers';
 import { Hex } from 'viem';
@@ -9,25 +9,27 @@ if (!DELEGATEE_PRIVATE_KEY) {
   throw new Error('Missing DELEGATEE_PRIVATE_KEY env variable');
 }
 
+const VINCENT_APP_ID = process.env.VINCENT_APP_ID;
+if (!VINCENT_APP_ID) {
+  throw new Error('Missing VINCENT_APP_ID env variable');
+}
+export const vincentAppId = parseInt(VINCENT_APP_ID);
+
 // Option 1: provide the PKP address
 const PKP_ETH_ADDRESS = process.env.PKP_ETH_ADDRESS;
 // Option 2: provide the Vincent App ID, and relayer keys to generate the PKP address
-const VINCENT_APP_ID = process.env.VINCENT_APP_ID;
 const LIT_PAYER_SECRET_KEY = process.env.LIT_PAYER_SECRET_KEY;
 const LIT_RELAY_API_KEY = process.env.LIT_RELAY_API_KEY;
 if (
   !PKP_ETH_ADDRESS &&
-  (!VINCENT_APP_ID || !LIT_PAYER_SECRET_KEY || !LIT_RELAY_API_KEY)
+  (!LIT_PAYER_SECRET_KEY || !LIT_RELAY_API_KEY)
 ) {
   throw new Error(
-    'Missing PKP_ETH_ADDRESS or VINCENT_APP_ID or LIT_PAYER_SECRET_KEY or LIT_RELAY_API_KEY env variable'
+    'Missing PKP_ETH_ADDRESS or LIT_PAYER_SECRET_KEY or LIT_RELAY_API_KEY env variable'
   );
 }
 
 export const pkpEthAddress = PKP_ETH_ADDRESS as Hex | undefined;
-export const vincentAppId = VINCENT_APP_ID
-  ? parseInt(VINCENT_APP_ID)
-  : undefined;
 export const litPayerSecretKey = LIT_PAYER_SECRET_KEY;
 export const litRelayApiKey = LIT_RELAY_API_KEY;
 

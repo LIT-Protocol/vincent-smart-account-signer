@@ -1,19 +1,22 @@
-import { Address } from 'viem';
-
 import {
+  Transaction,
   getAaveApprovalTx,
   getAaveSupplyTx,
   getAaveWithdrawTx,
   getAvailableMarkets,
-} from '../aave';
+  getATokens,
+} from '@lit-protocol/vincent-ability-aave';
+import { Address } from 'viem';
+
 import { chain } from '../environment/base';
+import { vincentAppId } from '../environment/lit';
 import { getErc20ReadContract } from './erc20';
 
 export interface GenerateTransactionsParams {
   accountAddress: Address;
 }
 
-export async function generateTransactions({
+export async function generateSupplyTransactions({
   accountAddress,
 }: GenerateTransactionsParams) {
   const aaveMarkets = getAvailableMarkets(chain.id);
@@ -23,14 +26,15 @@ export async function generateTransactions({
   }
 
   const usdcContract = getErc20ReadContract(usdcAddress);
-  let accountUsdcBalance: bigint = (await usdcContract.read.balanceOf([
+  const accountUsdcBalance = (await usdcContract.read.balanceOf([
     accountAddress,
   ])) as bigint;
+  console.log(`Account has ${accountUsdcBalance} USDC`);
 
   // Create transactions to be bundled
-  const aaveTransactions = [];
+  const aaveTransactions: Transaction[] = [];
 
-  const aaveApprovalTx = await getAaveApprovalTx({
+  const aaveApprovalTx = getAaveApprovalTx({
     accountAddress,
     amount: accountUsdcBalance.toString(),
     assetAddress: usdcAddress,
@@ -39,24 +43,68 @@ export async function generateTransactions({
   aaveTransactions.push(aaveApprovalTx);
 
   if (accountUsdcBalance === BigInt(0)) {
-    console.log(
-      `No USDC balance found on ${accountAddress} account. Only approval tx will be bundled`
+    throw new Error(
+      `No USDC balance found on ${accountAddress} account`
     );
   } else {
-    console.log(
-      `Account has ${accountUsdcBalance} USDC. Supplying and withdrawing will be bundled`
-    );
-    const aaveSupplyTx = await getAaveSupplyTx({
+    const aaveSupplyTx = getAaveSupplyTx({
       accountAddress,
+      appId: vincentAppId,
       amount: accountUsdcBalance.toString(),
       assetAddress: usdcAddress,
       chainId: chain.id,
     });
     aaveTransactions.push(aaveSupplyTx);
+  }
 
-    const aaveWithdrawTx = await getAaveWithdrawTx({
+  return aaveTransactions;
+}
+
+export async function generateWithdrawTransactions({
+  accountAddress,
+}: GenerateTransactionsParams) {
+  const aaveMarkets = getAvailableMarkets(chain.id);
+  const usdcAddress = aaveMarkets['USDC'];
+  if (!usdcAddress) {
+    throw new Error(`USDC not found in Aave markets for chain ${chain.id}`);
+  }
+
+  const aTokens = getATokens(chain.id);
+  const aUsdcAddress = aTokens['USDC'];
+  if (!aUsdcAddress) {
+    throw new Error(
+      `aUSDC not found in Aave markets for chain ${chain.id}. We must use the same USDC that Aave uses.`
+    );
+  }
+
+  const aUsdcContract = getErc20ReadContract(aUsdcAddress);
+  const accountAUsdcBalance = (await aUsdcContract.read.balanceOf([
+    accountAddress,
+  ])) as bigint;
+  console.log(
+    `Account has ${accountAUsdcBalance} aUSDC. Bundling withdraw for max amount`
+  );
+
+  // Create transactions to be bundled
+  const aaveTransactions: Transaction[] = [];
+
+  if (accountAUsdcBalance === BigInt(0)) {
+    throw new Error(
+      `No aUSDC balance found on ${accountAddress} account`
+    );
+  } else {
+    const aaveApprovalTx = getAaveApprovalTx({
       accountAddress,
-      amount: (accountUsdcBalance / BigInt(2)).toString(),
+      amount: accountAUsdcBalance.toString(),
+      assetAddress: aUsdcAddress,
+      chainId: chain.id,
+    });
+    aaveTransactions.push(aaveApprovalTx);
+
+    const aaveWithdrawTx = getAaveWithdrawTx({
+      accountAddress,
+      appId: vincentAppId,
+      amount: accountAUsdcBalance.toString(),
       assetAddress: usdcAddress,
       chainId: chain.id,
     });

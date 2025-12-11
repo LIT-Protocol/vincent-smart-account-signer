@@ -25,5 +25,9 @@ export async function sendPermittedSafeUserOperation({
     hash: userOpHash,
   });
 
-  console.log({ txHash: receipt.receipt.transactionHash });
+  const txHash = receipt.receipt.transactionHash;
+
+  console.log(`tx hash: ${txHash}`);
+
+  return txHash;
 }
