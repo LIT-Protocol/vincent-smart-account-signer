@@ -1,6 +1,8 @@
 import {
+  getAaveApprovalTx,
   getAaveWithdrawTx,
   getAvailableMarkets,
+  getATokens,
   toVincentUserOp,
 } from '@lit-protocol/vincent-ability-aave';
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
@@ -10,7 +12,7 @@ import { Hex, parseUnits } from 'viem';
 import yargs from 'yargs';
 
 import { chain, alchemyRpc } from '../environment/base';
-import { abilityClient } from '../environment/lit';
+import { abilityClient, vincentAppId } from '../environment/lit';
 import { entryPoint } from '../environment/zerodev';
 import { sendPermittedKernelUserOperation } from '../utils/sendPermittedKernelUserOperation';
 import { setupZeroDevSmartAccountAndDelegation } from '../utils/setupZeroDevSmartAccountAndDelegation';
@@ -28,6 +30,13 @@ async function main() {
 
   // get USDC address from aave address book
   const usdcAddress = getAvailableMarkets(chain.id)['USDC'];
+  const aTokens = getATokens(chain.id);
+  const aUsdcAddress = aTokens['USDC'];
+  if (!aUsdcAddress) {
+    throw new Error(
+      `aUSDC not found in Aave markets for chain ${chain.id}. We must use the same USDC that Aave uses.`
+    );
+  }
 
   // user setup and delegation
   const { ownerKernelAccount, pkpEthAddress, serializedPermissionAccount } =
@@ -35,11 +44,20 @@ async function main() {
 
   const amount = parseUnits(argv.amount.toString(), 6);
 
-  // Create transactions to be bundled.  for withdraw, we only need to call withdraw().
+  // Create transactions to be bundled.  for withdraw, we need to approve aUSDC and then call withdraw().
   const aaveTransactions = [];
+
+  const aaveApprovalTx = getAaveApprovalTx({
+    accountAddress: ownerKernelAccount.address,
+    amount: amount.toString(),
+    assetAddress: aUsdcAddress,
+    chainId: chain.id,
+  });
+  aaveTransactions.push(aaveApprovalTx);
 
   const aaveWithdrawTx = getAaveWithdrawTx({
     accountAddress: ownerKernelAccount.address,
+    appId: vincentAppId,
     amount: amount.toString(),
     assetAddress: usdcAddress,
     chainId: chain.id,

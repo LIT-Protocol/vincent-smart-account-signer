@@ -10,7 +10,7 @@ import { Hex, parseUnits } from 'viem';
 import yargs from 'yargs';
 
 import { chain, alchemyRpc } from '../environment/base';
-import { abilityClient } from '../environment/lit';
+import { abilityClient, vincentAppId } from '../environment/lit';
 import { entryPoint } from '../environment/zerodev';
 import { sendPermittedKernelUserOperation } from '../utils/sendPermittedKernelUserOperation';
 import { setupZeroDevSmartAccountAndDelegation } from '../utils/setupZeroDevSmartAccountAndDelegation';
@@ -58,8 +58,9 @@ async function main() {
   // Create transactions to be bundled. For borrow, we only need to call borrow().
   const aaveTransactions = [];
 
-  const aaveBorrowTx = await getAaveBorrowTx({
+  const aaveBorrowTx = getAaveBorrowTx({
     accountAddress: ownerKernelAccount.address,
+    appId: vincentAppId,
     amount: amount.toString(),
     assetAddress: assetAddress,
     chainId: chain.id,

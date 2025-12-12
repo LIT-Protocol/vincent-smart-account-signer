@@ -11,7 +11,7 @@ import { Hex, parseUnits } from 'viem';
 import yargs from 'yargs';
 
 import { chain, alchemyRpc } from '../environment/base';
-import { abilityClient } from '../environment/lit';
+import { abilityClient, vincentAppId } from '../environment/lit';
 import { entryPoint } from '../environment/zerodev';
 import { sendPermittedKernelUserOperation } from '../utils/sendPermittedKernelUserOperation';
 import { setupZeroDevSmartAccountAndDelegation } from '../utils/setupZeroDevSmartAccountAndDelegation';
@@ -59,7 +59,7 @@ async function main() {
   // Create transactions to be bundled. For repay, we need to approve the asset and then call repay().
   const aaveTransactions = [];
 
-  const aaveApprovalTx = await getAaveApprovalTx({
+  const aaveApprovalTx = getAaveApprovalTx({
     accountAddress: ownerKernelAccount.address,
     amount: amount.toString(),
     assetAddress: assetAddress,
@@ -67,8 +67,9 @@ async function main() {
   });
   aaveTransactions.push(aaveApprovalTx);
 
-  const aaveRepayTx = await getAaveRepayTx({
+  const aaveRepayTx = getAaveRepayTx({
     accountAddress: ownerKernelAccount.address,
+    appId: vincentAppId,
     amount: amount.toString(),
     assetAddress: assetAddress,
     chainId: chain.id,
