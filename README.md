@@ -193,9 +193,9 @@ The backend service receives the serialized permission account and:
 1. Deserializes the permission account using the Vincent empty account
 2. Builds an Aave transaction (in this case, an ERC20 approval):
    - Gets USDC token address for the chain (from Aave Address Book)
-   - Gets Aave Pool address
-   - Encodes an `approve(spender, amount)` call
-   - If the account already holds USDC, `supply` and `withdraw` operations will also be bundled after the approval
+   - Gets Aave addresses to be used
+   - Encodes an `approve(spender, amount)` call to enable the desired `supply` or `withdraw` call
+   - Encodes the `supply` or `withdraw` call
 3. Prepares an **unsigned UserOperation** containing:
    - Transaction calldata
    - Gas limits and fee parameters
@@ -217,10 +217,10 @@ The backend service receives the serialized permission account and:
 
 In EOA mode, we build an array of individual Aave transactions for the PKP EOA:
 
-1. Detects USDC token address for the chain (from the Aave Address Book)
+1. Detects USDC, or its aave equivalent, token address for the chain (using the Aave Address Book)
 2. Reads PKP EOA USDC balance
-3. Always prepares an `approve(spender, amount)` call for Aave's pool
-4. If balance > 0, also prepares `supply` and a partial `withdraw`
+3. Always prepares the required `approve(spender, amount)` call for the operation (`supply` or `withdrawal`)
+4. Prepares `supply` or `withdraw` actual transaction
 
 **Key output:**
 
@@ -263,7 +263,7 @@ await abilityClient.execute(vincentAbilityParams, vincentDelegationContext);
 `precheck` only validates without signing.
 In SA mode (passing a user operation) `execute` returns a UserOp signature using the standard UserOp signing method `getUserOperationHash` or a custom EIP-712 signature based on the user operation; in EOA mode it returns a standard transaction signature.
 
-**Key package:** `@lit-protocol/vincent-ability-aave-smart-account`
+**Key package:** `@lit-protocol/vincent-ability-aave`
 This package contains the bundled Vincent ability code that runs inside Lit Protocol's Trusted Execution Environment (TEE) using its unmutable code.
 
 **Key output:**
@@ -352,7 +352,7 @@ Before running this POC, you need to create a Vincent app with the appropriate a
 
 3. **Add the Aave Smart Account Ability**
    - In your app configuration, add the ability:
-     - Package: `@lit-protocol/vincent-ability-aave-smart-account`
+     - Package: `@lit-protocol/vincent-ability-aave`
      - This ability validates and signs UserOperations for Aave protocol interactions
    - Save the ability configuration
 

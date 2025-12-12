@@ -55,5 +55,10 @@ export async function sendPermittedKernelUserOperation({
     await permissionKernelClient.waitForUserOperationReceipt({
       hash: aaveUserOpHash,
     });
-  console.log({ txHash: aaveUserOpReceipt.receipt.transactionHash });
+
+  const txHash = aaveUserOpReceipt.receipt.transactionHash;
+
+  console.log(`tx hash: ${txHash}`);
+
+  return txHash;
 }

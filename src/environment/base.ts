@@ -36,6 +36,5 @@ if (!OWNER_PRIVATE_KEY) {
     `Please set OWNER_PRIVATE_KEY env variable to this value to keep using this account`
   );
 }
-export const ownerAccount = privateKeyToAccount(
-  OWNER_PRIVATE_KEY || generatedOwnerPrivateKey
-);
+export const ownerPrivateKey = OWNER_PRIVATE_KEY || generatedOwnerPrivateKey;
+export const ownerAccount = privateKeyToAccount(ownerPrivateKey);

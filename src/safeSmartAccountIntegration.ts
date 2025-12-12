@@ -1,12 +1,12 @@
-import { toVincentUserOp, safeEip712Params } from '@lit-protocol/vincent-ability-aave-smart-account';
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
-import { Address, Hex, concat, toHex } from 'viem';
 
-import { alchemyRpc } from './environment/base';
-import { abilityClient } from './environment/lit';
-import { entryPoint } from './environment/safe';
+import { publicClient } from './environment/base';
 import { fundAccount } from './utils/fundAccount';
-import { generateTransactions } from './utils/generateTransactions';
+import {
+  generateSupplyTransactions,
+  generateWithdrawTransactions,
+} from './utils/generateTransactions';
+import { getSafeUserOperationSignature } from './utils/getSafeUserOperationSignature';
 import { sendPermittedSafeUserOperation } from './utils/sendPermittedSafeUserOperation';
 import { setupSafeSmartAccountAndDelegation } from './utils/setupSafeSmartAccountAndDelegation';
 import { transactionsToSafeUserOp } from './utils/transactionsToSafeUserOp';
@@ -21,73 +21,85 @@ async function main() {
     accountAddress: safeAccount.address,
   });
 
-  const transactions = await generateTransactions({
+  // First we supply to Aave
+  const supplyTransactions = await generateSupplyTransactions({
     accountAddress: safeAccount.address,
   });
 
-  const aaveUserOp = await transactionsToSafeUserOp({
-    transactions,
+  const supplyAaveUserOp = await transactionsToSafeUserOp({
+    safeAddress: safeAccount.address,
+    permittedAddress: pkpEthAddress,
+    transactions: supplyTransactions,
+  });
+
+  const supplyUserOperationSignature = await getSafeUserOperationSignature({
+    pkpAddress: pkpEthAddress,
+    userOp: supplyAaveUserOp,
+  });
+
+  // Add signature to User Operation
+  const signedSupplyAaveUserOp = {
+    ...supplyAaveUserOp,
+    signature: supplyUserOperationSignature,
+  };
+
+  console.log(`Signed user op: `);
+  console.dir(signedSupplyAaveUserOp, { depth: null });
+
+  // Send user operation
+  const supplyTxHash = await sendPermittedSafeUserOperation({
+    signedUserOp: signedSupplyAaveUserOp,
+  });
+
+  await publicClient.waitForTransactionReceipt({
+    confirmations: 2,
+    hash: supplyTxHash,
+  });
+
+  // Then we withdraw from aave
+  const withdrawTransactions = await generateWithdrawTransactions({
+    accountAddress: safeAccount.address,
+  });
+
+  const withdrawAaveUserOp = await transactionsToSafeUserOp({
+    transactions: withdrawTransactions,
     safeAddress: safeAccount.address,
     permittedAddress: pkpEthAddress,
   });
 
-  console.log(
-    `Sending user op and serialized session signer to the Lit Signer...`
-  );
-
-  const validAfter = 0;
-  const validUntil = 0;
-  const vincentAbilityParams = {
-    validAfter,
-    validUntil,
-    alchemyRpcUrl: alchemyRpc,
-    eip712Params: safeEip712Params,
-    entryPointAddress: entryPoint.address,
-    safe4337ModuleAddress: '0x75cf11467937ce3F2f357CE24ffc3DBF8fD5c226' as Address, // Using the default one
-    userOp: toVincentUserOp(aaveUserOp),
-  };
-  const vincentDelegationContext = {
-    delegatorPkpEthAddress: pkpEthAddress,
-  };
-
-  const precheckResult = await abilityClient.precheck(
-    vincentAbilityParams,
-    vincentDelegationContext
-  );
-  if (!precheckResult.success) {
-    throw new Error(`Precheck failed: ${JSON.stringify(precheckResult)}`);
-  }
-
-  const executeResult = await abilityClient.execute(
-    vincentAbilityParams,
-    vincentDelegationContext
-  );
-  if (!executeResult.success) {
-    throw new Error(`Execute failed: ${JSON.stringify(executeResult)}`);
-  }
+  const withdrawUserOperationSignature = await getSafeUserOperationSignature({
+    pkpAddress: pkpEthAddress,
+    userOp: withdrawAaveUserOp,
+  });
 
   // Add signature to User Operation
-  const signedAaveUserOp = {
-    ...aaveUserOp,
-    // Safe signatures have the following shape [validAfter (6 bytes)][validUntil (6 bytes)][sig (ECDSA)][maybe-module]
-    signature: concat([toHex(validAfter, { size: 6 }), toHex(validUntil, { size: 6 }), executeResult.result.signature as Hex]),
+  const signedWithdrawAaveUserOp = {
+    ...withdrawAaveUserOp,
+    signature: withdrawUserOperationSignature,
   };
 
   console.log(`Signed user op: `);
-  console.dir(signedAaveUserOp, { depth: null });
+  console.dir(signedWithdrawAaveUserOp, { depth: null });
 
   // Send user operation
-  await sendPermittedSafeUserOperation({
-    signedUserOp: signedAaveUserOp,
+  const withdrawTxHash = await sendPermittedSafeUserOperation({
+    signedUserOp: signedWithdrawAaveUserOp,
   });
 
-  await disconnectVincentAbilityClients();
-
-  console.log('Success! User operation sent and executed successfully.');
-  process.exit(0);
+  await publicClient.waitForTransactionReceipt({
+    confirmations: 2,
+    hash: withdrawTxHash,
+  });
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await disconnectVincentAbilityClients();
+
+    console.log('Success! User operation sent and executed successfully.');
+    process.exit(0);
+  });

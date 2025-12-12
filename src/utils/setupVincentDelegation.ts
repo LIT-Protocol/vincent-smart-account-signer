@@ -20,7 +20,7 @@ import {
 } from '@lit-protocol/vincent-contracts-sdk';
 import bs58 from 'bs58';
 import { ethers } from 'ethers';
-import { Hex } from 'viem';
+import { Address } from 'viem';
 import { PrivateKeyAccount } from 'viem/accounts';
 
 import {
@@ -449,7 +449,7 @@ export interface SetupVincentDelegationParams {
 export async function setupVincentDelegation({
   ownerAccount,
   vincentAppId,
-}: SetupVincentDelegationParams): Promise<Hex> {
+}: SetupVincentDelegationParams) {
   // If PKP address is already provided, skip the setup and use that one
   if (pkpEthAddress) {
     console.log(`✅ Using existing PKP address: ${pkpEthAddress}`);
@@ -544,7 +544,7 @@ export async function setupVincentDelegation({
 
     await litNodeClient.disconnect();
 
-    return agentPKP.ethAddress as Hex;
+    return agentPKP.ethAddress as Address;
   } catch (error) {
     throw new Error(
       `Vincent delegation setup failed: ${

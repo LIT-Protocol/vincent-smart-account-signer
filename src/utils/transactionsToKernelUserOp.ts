@@ -1,3 +1,4 @@
+import { Transaction } from '@lit-protocol/vincent-ability-aave';
 import { deserializePermissionAccount } from '@zerodev/permissions';
 import { toECDSASigner } from '@zerodev/permissions/signers';
 import { createKernelAccountClient, addressToEmptyAccount } from '@zerodev/sdk';
@@ -10,7 +11,6 @@ import {
   zerodevTransport,
   zerodevPaymaster,
 } from '../environment/zerodev';
-import { Transaction } from '../aave';
 
 export interface TransactionsToKernelUserOpParams {
   permittedAddress: Address;
