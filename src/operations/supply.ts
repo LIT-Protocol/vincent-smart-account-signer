@@ -38,6 +38,7 @@ async function main() {
   // CLIENT (APP BACKEND)
   await fundAccount({
     accountAddress: ownerKernelAccount.address,
+    nativeFunds: parseUnits('0.1', 18),
   });
 
   const amount = parseUnits(argv.amount.toString(), 6);
@@ -105,7 +106,7 @@ async function main() {
   // User op returns signed
   const signedAaveUserOp = {
     ...aaveUserOp,
-    signature: executeResult.result.userOp.signature as Hex,
+    signature: executeResult.result.signature as Hex,
   };
 
   // Send user operation
