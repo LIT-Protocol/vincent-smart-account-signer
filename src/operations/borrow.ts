@@ -53,13 +53,6 @@ async function main() {
   // Create transactions: borrow
   const aaveTransactions: Transaction[] = [];
 
-  console.log(`Borrowing with `)
-  console.log(`Asset address: ${assetAddress}`);
-  console.log(`Chain ID: ${chain.id}`);
-  console.log(`Interest rate mode: 2 (variable rate)`);
-  console.log(`Account address: ${ownerKernelAccount.address}`);
-  console.log(`Amount: ${amount}`);
-
   aaveTransactions.push(
     getAaveBorrowTx({
       accountAddress: ownerKernelAccount.address,
@@ -67,6 +60,8 @@ async function main() {
       assetAddress,
       chainId: chain.id,
       interestRateMode: 2, // Variable rate
+      referralCode: 0,
+      onBehalfOf: ownerKernelAccount.address,
     })
   );
 

@@ -70,6 +70,7 @@ async function main() {
       assetAddress,
       chainId: chain.id,
       interestRateMode: 2, // Variable rate
+      onBehalfOf: ownerKernelAccount.address,
     })
   );
 
