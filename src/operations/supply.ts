@@ -52,7 +52,6 @@ async function main() {
 
   await fundAccount({
     accountAddress: ownerKernelAccount.address,
-    nativeFunds: parseUnits('0.1', 18),
   });
 
   const decimals = await getERC20Decimals(assetAddress);

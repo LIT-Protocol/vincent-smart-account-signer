@@ -1,5 +1,6 @@
 import {
   getAaveApprovalTx,
+  getAaveAddresses,
   getAaveRepayTx,
   getAvailableMarkets,
   Transaction,
@@ -54,12 +55,15 @@ async function main() {
   // Create transactions: approve + repay
   const aaveTransactions: Transaction[] = [];
 
+  const { POOL } = getAaveAddresses(chain.id);
+
   aaveTransactions.push(
     getAaveApprovalTx({
       accountAddress: ownerKernelAccount.address,
       amount: amount.toString(),
       assetAddress,
       chainId: chain.id,
+      spenderAddress: POOL,
     })
   );
 

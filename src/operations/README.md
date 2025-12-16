@@ -4,7 +4,7 @@ These scripts allow you to execute individual Aave protocol operations on your s
 
 ## Prerequisites
 
-1. **Initial Setup**: Run `npm run smart-account-integration` at least once to:
+1. **Initial Setup**: Run `npm run kernel-smart-account-integration` at least once to:
    - Test all your env vars
    - Deploy your smart account
    - Set up Vincent PKP delegation
