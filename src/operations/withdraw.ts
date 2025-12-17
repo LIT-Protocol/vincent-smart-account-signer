@@ -1,7 +1,9 @@
 import {
+  getAaveApprovalTx,
   getAaveWithdrawTx,
   getAvailableMarkets,
-  toVincentUserOp,
+  getATokens,
+  Transaction,
 } from '@lit-protocol/vincent-ability-aave';
 import { disconnectVincentAbilityClients } from '@lit-protocol/vincent-app-sdk/abilityClient';
 import { Hex, parseUnits } from 'viem';
@@ -9,103 +11,116 @@ import { Hex, parseUnits } from 'viem';
 // @ts-ignore - yargs types exist, but TypeScript has trouble resolving them with bundler moduleResolution
 import yargs from 'yargs';
 
-import { chain, alchemyRpc } from '../environment/base';
-import { abilityClient } from '../environment/lit';
-import { entryPoint } from '../environment/zerodev';
+import { chain, publicClient } from '../environment/base';
+import { vincentAppId } from '../environment/lit';
+import { getKernelUserOperationSignature } from '../utils/getKernelUserOperationSignature';
 import { sendPermittedKernelUserOperation } from '../utils/sendPermittedKernelUserOperation';
 import { setupZeroDevSmartAccountAndDelegation } from '../utils/setupZeroDevSmartAccountAndDelegation';
 import { transactionsToKernelUserOp } from '../utils/transactionsToKernelUserOp';
+import { getERC20Decimals } from '../utils/erc20';
 
 async function main() {
-  const argv = yargs(process.argv)
+  const argv = await yargs(process.argv)
     .option('amount', {
       alias: 'a',
       type: 'number',
-      description: 'Amount of USDC to withdraw',
+      description: 'Amount to withdraw',
       required: true,
+    })
+    .option('asset', {
+      alias: 's',
+      type: 'string',
+      description: 'Asset to withdraw (symbol or address)',
+      default: 'USDC',
     })
     .parse();
 
-  // get USDC address from aave address book
-  const usdcAddress = getAvailableMarkets(chain.id)['USDC'];
+  // Get asset address - if user passed a symbol, try to get it from markets
+  let assetAddress: Hex = argv.asset as Hex;
+  if (!argv.asset.startsWith('0x')) {
+    const markets = getAvailableMarkets(chain.id);
+    if (markets[argv.asset.toUpperCase()]) {
+      assetAddress = markets[argv.asset.toUpperCase()] as Hex;
+      console.log(`Using ${argv.asset} address: ${assetAddress}`);
+    } else {
+      throw new Error(`Asset ${argv.asset} not found in available markets`);
+    }
+  }
 
-  // user setup and delegation
+  // Get the aToken address for the asset
+  const aTokens = getATokens(chain.id);
+  const assetSymbol = argv.asset.toUpperCase();
+  const aTokenAddress = aTokens[assetSymbol] as Hex;
+  if (!aTokenAddress) {
+    throw new Error(
+      `aToken for ${assetSymbol} not found in Aave markets for chain ${chain.id}`
+    );
+  }
+
   const { ownerKernelAccount, pkpEthAddress, serializedPermissionAccount } =
     await setupZeroDevSmartAccountAndDelegation();
 
-  const amount = parseUnits(argv.amount.toString(), 6);
+  const decimals = await getERC20Decimals(assetAddress);
+  const amount = parseUnits(argv.amount.toString(), decimals);
 
-  // Create transactions to be bundled.  for withdraw, we only need to call withdraw().
-  const aaveTransactions = [];
+  // Create transactions: approve aToken + withdraw
+  const aaveTransactions: Transaction[] = [];
 
-  const aaveWithdrawTx = getAaveWithdrawTx({
-    accountAddress: ownerKernelAccount.address,
-    amount: amount.toString(),
-    assetAddress: usdcAddress,
-    chainId: chain.id,
-  });
-  aaveTransactions.push(aaveWithdrawTx);
+  aaveTransactions.push(
+    getAaveApprovalTx({
+      accountAddress: ownerKernelAccount.address,
+      amount: amount.toString(),
+      assetAddress: aTokenAddress,
+      chainId: chain.id,
+    })
+  );
 
-  // convert the transactions array to a proper zerodev user op
+  aaveTransactions.push(
+    getAaveWithdrawTx({
+      accountAddress: ownerKernelAccount.address,
+      appId: vincentAppId,
+      amount: amount.toString(),
+      assetAddress,
+      chainId: chain.id,
+    })
+  );
+
   const aaveUserOp = await transactionsToKernelUserOp({
     serializedPermissionAccount,
     permittedAddress: pkpEthAddress,
     transactions: aaveTransactions,
   });
 
-  // send the user op to the lit signer.  this is the vincent aave smart account ability.
-  console.log(
-    `Sending user op and serialized session signer to the Lit Signer...`
-  );
-
-  const vincentAbilityParams = {
-    alchemyRpcUrl: alchemyRpc,
-    entryPointAddress: entryPoint.address,
-    serializedZeroDevPermissionAccount: serializedPermissionAccount,
-    userOp: toVincentUserOp(aaveUserOp),
-  };
-  const vincentDelegationContext = {
-    delegatorPkpEthAddress: pkpEthAddress,
-  };
-
-  // precheck is run on the client side.  if it fails, you can stop, and you don't have to pay Lit to attempt to sign the user op.
-  const precheckResult = await abilityClient.precheck(
-    vincentAbilityParams,
-    vincentDelegationContext
-  );
-  if (!precheckResult.success) {
-    throw new Error(`Precheck failed: ${JSON.stringify(precheckResult)}`);
-  }
-
-  // execute is run on the Lit Nodes as a lit action.  it actually signs the user op with the PKP.
-  const executeResult = await abilityClient.execute(
-    vincentAbilityParams,
-    vincentDelegationContext
-  );
-  if (!executeResult.success) {
-    throw new Error(`Execute failed: ${JSON.stringify(executeResult)}`);
-  }
-
-  // User op returns signed
-  const signedAaveUserOp = {
-    ...aaveUserOp,
-    signature: executeResult.result.userOp.signature as Hex,
-  };
-
-  // Send user operation
-  await sendPermittedKernelUserOperation({
-    permittedAddress: pkpEthAddress,
-    serializedPermissionAccount,
-    signedUserOp: signedAaveUserOp,
+  const signature = await getKernelUserOperationSignature({
+    pkpAddress: pkpEthAddress,
+    secondValidatorId: '0xff',
+    userOp: aaveUserOp,
   });
 
-  await disconnectVincentAbilityClients();
+  const signedUserOp = { ...aaveUserOp, signature };
 
-  console.log('Success! User operation sent and executed successfully.');
-  process.exit(0);
+  console.log(`Signed user op:`);
+  console.dir(signedUserOp, { depth: null });
+
+  const txHash = await sendPermittedKernelUserOperation({
+    serializedPermissionAccount,
+    permittedAddress: pkpEthAddress,
+    signedUserOp,
+  });
+
+  await publicClient.waitForTransactionReceipt({
+    confirmations: 2,
+    hash: txHash,
+  });
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await disconnectVincentAbilityClients();
+    console.log('Success! User operation sent and executed successfully.');
+    process.exit(0);
+  });
